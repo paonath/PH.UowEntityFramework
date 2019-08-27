@@ -70,14 +70,8 @@ namespace PH.UowEntityFramework.EntityFramework
         /// changes to entity instances before saving to the underlying database. This can be disabled via
         /// <see cref="P:Microsoft.EntityFrameworkCore.ChangeTracking.ChangeTracker.AutoDetectChangesEnabled" />.
         /// </remarks>
-        public sealed override int SaveChanges()
-        {
-            var auditEntries = this.OnBeforeSaveChanges(Audits); 
-            var result       = base.SaveChanges();
-            this.OnAfterSaveChanges(Audits,auditEntries);
-            Changecount += result;
-            return result;
-        }
+        public sealed override int SaveChanges() => SaveChanges(true);
+        
 
         /// <summary>
         /// Saves all changes made in this context to the database.
@@ -94,11 +88,21 @@ namespace PH.UowEntityFramework.EntityFramework
         /// </remarks>
         public sealed override int SaveChanges(bool acceptAllChangesOnSuccess)
         {
-            var auditEntries = this.OnBeforeSaveChanges(Audits); 
-            var result       = base.SaveChanges(acceptAllChangesOnSuccess);
-            this.OnAfterSaveChanges(Audits,auditEntries);
-            Changecount += result;
-            return result;
+            InitializeSelf();
+
+            try
+            {
+                var auditEntries = this.OnBeforeSaveChanges(Audits,ContextLogger); 
+                var result       = base.SaveChanges(acceptAllChangesOnSuccess);
+                this.OnAfterSaveChanges(Audits,auditEntries,ContextLogger);
+                Changecount += result;
+                return result;
+            }
+            catch (Exception e)
+            {
+                ContextLogger?.LogCritical(e, $"Error on SaveChanges: {e.Message} ");
+                throw;
+            }
         }
 
         /// <summary>
@@ -148,11 +152,24 @@ namespace PH.UowEntityFramework.EntityFramework
         /// </remarks>
         public sealed override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = new CancellationToken())
         {
-            var auditEntries = this.OnBeforeSaveChanges(Audits);
-            var result       = await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
-            await this.OnAfterSaveChangesAsync(Audits,auditEntries);
-            Changecount += result;
-            return result;
+            InitializeSelf();
+            
+
+            try
+            {
+                var auditEntries = this.OnBeforeSaveChanges(Audits, ContextLogger);
+                var result = await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+                await this.OnAfterSaveChangesAsync(Audits,auditEntries, ContextLogger);
+                Changecount += result;
+                return result;
+            }
+            catch (Exception e)
+            {
+               ContextLogger?.LogCritical(e, $"Error on SaveChangesAsync: {e.Message} ");
+               throw;
+            }
+
+           
         }
 
         #endregion

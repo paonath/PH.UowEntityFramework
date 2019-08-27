@@ -249,7 +249,7 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
                 catch (Exception e)
                 {
                     var err = $"Error configuring '{entityName}'";
-                    _logger?.LogCritical(err, e);
+                    ContextLogger?.LogCritical(err, e);
                     throw new Exception(err, e);
                 }
 
@@ -454,7 +454,7 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
 
             _scopeCount++;
             ScopeDictionary.Add(_scopeCount, scopeName);
-            return new NamedScope(_logger, scopeName);
+            return new NamedScope(ContextLogger, scopeName);
         }
 
         #endregion
@@ -463,8 +463,9 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
         /// <value>The uow logger.</value>
         public ILogger UowLogger { get; set; }
 
-
-        private ILogger _logger => null == Logger ? UowLogger : Logger;
+        /// <summary>Gets the context logger.</summary>
+        /// <value>The context logger.</value>
+        protected ILogger ContextLogger => Logger ?? UowLogger;
 
 
         
