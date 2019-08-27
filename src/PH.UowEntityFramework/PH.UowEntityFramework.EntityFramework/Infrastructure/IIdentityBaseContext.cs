@@ -5,17 +5,18 @@ using JetBrains.Annotations;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using PH.UowEntityFramework.EntityFramework.Abstractions.Models;
 
 namespace PH.UowEntityFramework.EntityFramework.Infrastructure
 {
     /// <summary>
-    /// 
+    /// Base abstract class for Identity Db Context
     /// </summary>
     /// <typeparam name="TUser">The type of the user.</typeparam>
     /// <typeparam name="TRole">The type of the role.</typeparam>
     /// <typeparam name="TKey">The type of the key.</typeparam>
     /// <seealso cref="ITenantContext" />
-    public interface IIdentityBaseContext<TUser, TRole, TKey> : /*ITenantContext,*/ IInitializable<IdentityBaseContext<TUser, TRole, TKey>>
+    public interface IIdentityBaseContext<TUser, TRole, TKey> 
         where TUser : IdentityUser<TKey>, IEntity<TKey> 
         where TRole : IdentityRole<TKey>, IEntity<TKey> 
         where TKey : IEquatable<TKey>
@@ -28,12 +29,14 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
         /// <value>The scope dictionary.</value>
         Dictionary<int, string> ScopeDictionary { get; }
 
-        
+        /// <summary>Initializes this instance.</summary>
+        /// <returns></returns>
+        IIdentityBaseContext<TUser, TRole, TKey> Initialize();
 
         /// <summary>
         /// Identifier
         /// </summary>
-        IIdentifier Identifier { get; set; }
+        string Identifier { get; set; }
 
         /// <summary>Gets or sets the author.</summary>
         /// <value>The author.</value>

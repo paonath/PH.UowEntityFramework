@@ -7,14 +7,15 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	ProjectSection(SolutionItems) = preProject
 		Directory.Build.props = Directory.Build.props
 		..\..\LICENSE = ..\..\LICENSE
+		..\..\PackagesBuild.bat = ..\..\PackagesBuild.bat
 		..\..\README.md = ..\..\README.md
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PH.UowEntityFramework.UnitOfWork", "PH.UowEntityFramework.UnitOfWork\PH.UowEntityFramework.UnitOfWork.csproj", "{709A79DB-F577-4363-9424-484A9985A1ED}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PH.UowEntityFramework.UnitOfWork", "PH.UowEntityFramework.UnitOfWork\PH.UowEntityFramework.UnitOfWork.csproj", "{709A79DB-F577-4363-9424-484A9985A1ED}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PH.UowEntityFramework.EntityFramework", "..\PH.UowEntityFramework.EntityFramework\PH.UowEntityFramework.EntityFramework.csproj", "{1427E797-8B42-4FAD-86C0-C1730B6F64F4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PH.UowEntityFramework.EntityFramework", "PH.UowEntityFramework.EntityFramework\PH.UowEntityFramework.EntityFramework.csproj", "{1427E797-8B42-4FAD-86C0-C1730B6F64F4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PH.UowEntityFramework.EntityFramework.Abstractions", "PH.UowEntityFramework.EntityFramework.Abstractions\PH.UowEntityFramework.EntityFramework.Abstractions.csproj", "{99FEE051-3803-41A7-A856-F0E9498144B9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PH.UowEntityFramework.EntityFramework.Abstractions", "PH.UowEntityFramework.EntityFramework.Abstractions\PH.UowEntityFramework.EntityFramework.Abstractions.csproj", "{99FEE051-3803-41A7-A856-F0E9498144B9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -4,12 +4,12 @@
     <Copyright>Copyright PH 2019 (c) paonath@gmail.com. All rights reserved.</Copyright>
     <Authors>Paolo Innocenti</Authors>
     <Company>paonath@gmail.com</Company>
-    <Version>0.0.1</Version>
+    <Version>0.0.3</Version>
 
    
 
     <!--NUGET -->
-    <PackageVersion>0.0.1-alpha</PackageVersion>
+    <PackageVersion>0.0.3</PackageVersion>
     <IconUrl>https://raw.githubusercontent.com/paonath/Icons/master/nuget_es_img.png</IconUrl>
     <RepositoryUrl>https://github.com/paonath/PH.Core3</RepositoryUrl>
     <PackageProjectUrl>https://github.com/paonath/PH.Core3</PackageProjectUrl>

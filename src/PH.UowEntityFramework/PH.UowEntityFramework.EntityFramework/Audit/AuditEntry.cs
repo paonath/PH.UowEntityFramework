@@ -17,18 +17,18 @@ namespace PH.UowEntityFramework.EntityFramework.Audit
             Entry = entry;
         }
 
-        public AuditEntry(EntityEntry entry, string transactionId) : this(entry)
+        public AuditEntry(EntityEntry entry, long transactionId) : this(entry)
         {
             TransactionId = transactionId;
         }
-        public AuditEntry(EntityEntry entry, string transactionId,string author) : this(entry,transactionId)
+        public AuditEntry(EntityEntry entry, long transactionId,string author) : this(entry,transactionId)
         {
             Author = author;
         }
 
 
 
-        public string TransactionId { get; set; }
+        public long TransactionId { get; set; }
         public string Author { get; set; }
         public EntityEntry Entry { get; }
         public string TableName { get; set; }

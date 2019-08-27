@@ -1,14 +1,16 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 
+[assembly: InternalsVisibleTo("PH.UowEntityFramework.EntityFramework")]
 namespace PH.UowEntityFramework.UnitOfWork
 {
     /// <summary>
     /// Base Event Argument class
     /// </summary>
-    public abstract class UnitOfWorkEventArg : EventArgs
+    public class UnitOfWorkEventArg : EventArgs
     {
         
-        internal UnitOfWorkEventArg(string identifier)
+        private UnitOfWorkEventArg(string identifier)
         {
             Identifier = identifier;
             Id         = Guid.NewGuid();
@@ -26,5 +28,11 @@ namespace PH.UowEntityFramework.UnitOfWork
         /// <summary>Gets the identifier.</summary>
         /// <value>The identifier.</value>
         public Guid Id { get; }
+
+        /// <summary>Init new Instance with the specified identifier.</summary>
+        /// <param name="identifier">The identifier.</param>
+        /// <returns>UnitOfWorkEventArg</returns>
+        internal static UnitOfWorkEventArg Instance(string identifier) => new UnitOfWorkEventArg(identifier);
+        
     }
 }

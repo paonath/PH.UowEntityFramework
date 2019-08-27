@@ -1,13 +1,20 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System;
+using Microsoft.Extensions.Logging;
+using PH.UowEntityFramework.UnitOfWork;
 
 namespace PH.UowEntityFramework.EntityFramework.Infrastructure
 {
     /// <summary>
     /// Db Context Unit Of Work
     /// </summary>
-    /// <seealso cref="PH.Core3.UnitOfWork.IUnitOfWork" />
-    public interface IDbContextUnitOfWork : IUnitOfWork
+    /// <seealso cref="IUnitOfWork" />
+    public interface IDbContextUnitOfWork : IDisposable
     {
+        /// <summary>
+        /// Identifier
+        /// </summary>
+        string Identifier { get; set; }
+
         /// <summary>Gets or sets the uow logger.</summary>
         /// <value>The uow logger.</value>
         ILogger UowLogger { get; set; }
@@ -21,5 +28,11 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
         /// <summary>Initializes this instance.</summary>
         /// <returns>IDbContextUnitOfWork instance initialized</returns>
         IDbContextUnitOfWork Initialize();
+
+        /// <summary>
+        /// Fired On Committed Unit Of Work
+        /// </summary>
+        event EventHandler<UnitOfWorkEventArg> Committed;
+
     }
 }

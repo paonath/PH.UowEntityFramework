@@ -1,7 +1,32 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+
+    <!-- Generate XML docs -->
+    <DocumentationFile>bin\$(Configuration)\PH.UowEntityFramework.UnitOfWork.xml</DocumentationFile>
+
+
+
+
+
+    <!--NUGET PKG-->
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    
+    <PackageId>PH.UowEntityFramework.UnitOfWork</PackageId>
+    
+    <Description>
+      NetStandard2.0 Unit Of Work
+    </Description>
+
+    <PackageReleaseNotes>
+      First release.
+    </PackageReleaseNotes>
+    
+    <PackageTags>
+      asp.net core, netcore, csharp, services, di, ef, entity framework core, DAL, data access layer, dbcontext, IdentityDbContext
+    </PackageTags>
   </PropertyGroup>
 
 </Project>
