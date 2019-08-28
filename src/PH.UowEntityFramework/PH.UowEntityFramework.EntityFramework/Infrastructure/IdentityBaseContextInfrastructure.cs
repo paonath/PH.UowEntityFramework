@@ -17,8 +17,9 @@ using PH.UowEntityFramework.UnitOfWork;
 
 namespace PH.UowEntityFramework.EntityFramework.Infrastructure
 {
+    
     /// <summary>
-    /// 
+    /// Identitity Context Infrastructure
     /// </summary>
     /// <typeparam name="TUser">The type of the user.</typeparam>
     /// <typeparam name="TRole">The type of the role.</typeparam>
@@ -298,7 +299,7 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
             var t = Task.Run(async () =>
             {
                 Transaction = await Database.BeginTransactionAsync(CancellationToken);
-                //var tenant  = await EnsureTenantAsync();
+                
 
                 var tyAudit = new TransactionAudit()
                 {
@@ -481,33 +482,14 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
         [NotNull]
         protected abstract IdentityBaseContext<TUser, TRole, TKey> InitializeSelf();
 
+        ///// <summary>Initializes this instance.</summary>
+        ///// <returns></returns>
+        //[NotNull]
+        //IIdentityBaseContext<TUser, TRole, TKey> IIdentityBaseContext<TUser, TRole, TKey>.Initialize()  => InitializeSelf();
+
         /// <summary>Initializes this instance.</summary>
         /// <returns></returns>
-        [NotNull]
-        IIdentityBaseContext<TUser, TRole, TKey> IIdentityBaseContext<TUser, TRole, TKey>.Initialize()  => InitializeSelf();
-        
-
-        class NamedScope : IDisposable
-        {
-            private IDisposable _scopeDisposable;
-
-            public NamedScope([CanBeNull] ILogger logger, string name)
-            {
-                _scopeDisposable = logger?.BeginScope(name);
-            }
-
-            /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.</summary>
-            public void Dispose()
-            {
-                _scopeDisposable?.Dispose();
-            }
-        }
-
-
-
-
-
-     
-
+        IBaseContext IBaseContext.Initialize() => InitializeSelf();
     }
+
 }

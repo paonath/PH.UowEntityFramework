@@ -60,27 +60,31 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
         /// <returns></returns>
         public virtual void Flush(bool throwExceptionOnError = false)
         {
-            
-            while (_actions.Count > 0)
+            if (_actions.Count > 0)
             {
-                var act = _actions.Dequeue();
-                try
+                _logger?.LogTrace($"Begin flushing {_actions.Count} actions.");   
+                while (_actions.Count > 0)
                 {
-                    act.Invoke();
-                }
-                catch (Exception e)
-                {
-                    if (throwExceptionOnError)
+                    var act = _actions.Dequeue();
+                    try
                     {
-                        _logger.LogCritical(e, $"Error performing action: {e.Message}");
-                        throw;
+                        act.Invoke();
                     }
-                    else
+                    catch (Exception e)
                     {
-                        _logger.LogError(e, $"Error performing action: {e.Message}");
+                        if (throwExceptionOnError)
+                        {
+                            _logger?.LogCritical(e, $"Error performing action: {e.Message}");
+                            throw;
+                        }
+                        else
+                        {
+                            _logger?.LogError(e, $"Error performing action: {e.Message}");
+                        }
                     }
                 }
             }
+            
         }
 
         /// <summary>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.</summary>

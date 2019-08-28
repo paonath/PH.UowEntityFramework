@@ -5,7 +5,7 @@ using PH.UowEntityFramework.UnitOfWork;
 namespace PH.UowEntityFramework.EntityFramework.Infrastructure
 {
     /// <summary>
-    /// Db Context Unit Of Work
+    /// Db Context Unit Of Work infrastructure
     /// </summary>
     /// <seealso cref="IUnitOfWork" />
     public interface IDbContextUnitOfWork : IDisposable

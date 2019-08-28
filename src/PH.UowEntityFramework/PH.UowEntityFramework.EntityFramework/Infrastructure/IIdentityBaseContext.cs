@@ -10,16 +10,9 @@ using PH.UowEntityFramework.EntityFramework.Abstractions.Models;
 namespace PH.UowEntityFramework.EntityFramework.Infrastructure
 {
     /// <summary>
-    /// Base abstract class for Identity Db Context
+    /// Base Interface for Db Context
     /// </summary>
-    /// <typeparam name="TUser">The type of the user.</typeparam>
-    /// <typeparam name="TRole">The type of the role.</typeparam>
-    /// <typeparam name="TKey">The type of the key.</typeparam>
-    /// <seealso cref="ITenantContext" />
-    public interface IIdentityBaseContext<TUser, TRole, TKey> 
-        where TUser : IdentityUser<TKey>, IEntity<TKey> 
-        where TRole : IdentityRole<TKey>, IEntity<TKey> 
-        where TKey : IEquatable<TKey>
+    public interface IBaseContext
     {
         /// <summary>Gets or sets the logger.</summary>
         /// <value>The logger.</value>
@@ -31,7 +24,7 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
 
         /// <summary>Initializes this instance.</summary>
         /// <returns></returns>
-        IIdentityBaseContext<TUser, TRole, TKey> Initialize();
+        IBaseContext Initialize();
 
         /// <summary>
         /// Identifier
@@ -67,7 +60,22 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
         /// <param name="scopeName">Name of the scope.</param>
         /// <returns></returns>
         IDisposable BeginScope([NotNull] string scopeName);
+    }
 
 
+    /// <summary>
+    /// Base interface for Identity Db Context
+    /// </summary>
+    /// <typeparam name="TUser">The type of the user.</typeparam>
+    /// <typeparam name="TRole">The type of the role.</typeparam>
+    /// <typeparam name="TKey">The type of the key.</typeparam>
+    /// <seealso cref="ITenantContext" />
+    public interface IIdentityBaseContext<TUser, TRole, TKey> : IBaseContext
+        where TUser : IdentityUser<TKey>, IEntity<TKey> 
+        where TRole : IdentityRole<TKey>, IEntity<TKey> 
+        where TKey : IEquatable<TKey>
+    {
+       
+        
     }
 }

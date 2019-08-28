@@ -19,7 +19,7 @@ using PH.UowEntityFramework.EntityFramework.Extensions;
 namespace PH.UowEntityFramework.EntityFramework
 {
     /// <summary>
-    /// Core Identitity Context
+    /// Identitity Context
     ///
     /// <see cref="Microsoft.AspNetCore.Identity.EntityFrameworkCore.IdentityDbContext{TUser, TRole, TKey}"/>
     /// </summary>
