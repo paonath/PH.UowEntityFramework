@@ -4,6 +4,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using JetBrains.Annotations;
+using MassTransit;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Newtonsoft.Json;
 
@@ -54,6 +55,7 @@ namespace PH.UowEntityFramework.EntityFramework.Audit
                 add = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(NewValues, Formatting.None, new JsonSerializerSettings(){ ReferenceLoopHandling = ReferenceLoopHandling.Ignore } ));
             }
 
+            
 
             var audit = new Audit
             {
@@ -66,6 +68,7 @@ namespace PH.UowEntityFramework.EntityFramework.Audit
                 Author        = Author,
                 Id            = $"{Guid.NewGuid()}"
             };
+
             return audit;
         }
     }

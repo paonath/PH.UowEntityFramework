@@ -491,5 +491,4 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
         /// <returns></returns>
         IBaseContext IBaseContext.Initialize() => InitializeSelf();
     }
-
 }
