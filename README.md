@@ -10,4 +10,8 @@ PH.UowEntityFramework.EntityFramework:  [![NuGet Badge](https://buildstats.info/
 
 
 
+## Porting to Core3
 
+I need:
+- test
+- more test!
