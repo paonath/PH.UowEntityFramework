@@ -1,6 +1,6 @@
 <Project>
   <PropertyGroup>	
-    <LangVersion>latest</LangVersion>
+    <LangVersion>8.0</LangVersion>
     <Copyright>Copyright PH 2019 (c) paonath@gmail.com. All rights reserved.</Copyright>
     <Authors>Paolo Innocenti</Authors>
     <Company>paonath@gmail.com</Company>
