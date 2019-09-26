@@ -17,6 +17,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PH.UowEntityFramework.Entit
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PH.UowEntityFramework.EntityFramework.Abstractions", "PH.UowEntityFramework.EntityFramework.Abstractions\PH.UowEntityFramework.EntityFramework.Abstractions.csproj", "{99FEE051-3803-41A7-A856-F0E9498144B9}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Test", "Test", "{4F18BCA2-04F6-4830-B443-39AFE4BCFE3B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PH.UowEntityFramework.TestCtx", "PH.UowEntityFramework.TestCtx\PH.UowEntityFramework.TestCtx.csproj", "{806C1C33-500A-4919-9815-5737934E5B74}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -35,9 +39,16 @@ Global
 		{99FEE051-3803-41A7-A856-F0E9498144B9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{99FEE051-3803-41A7-A856-F0E9498144B9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{99FEE051-3803-41A7-A856-F0E9498144B9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{806C1C33-500A-4919-9815-5737934E5B74}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{806C1C33-500A-4919-9815-5737934E5B74}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{806C1C33-500A-4919-9815-5737934E5B74}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{806C1C33-500A-4919-9815-5737934E5B74}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{806C1C33-500A-4919-9815-5737934E5B74} = {4F18BCA2-04F6-4830-B443-39AFE4BCFE3B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {96668046-B43D-4819-8C0C-90FC4B9F37F1}

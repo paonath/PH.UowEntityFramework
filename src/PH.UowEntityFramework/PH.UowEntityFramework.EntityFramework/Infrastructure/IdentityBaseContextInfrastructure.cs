@@ -200,7 +200,10 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
                     var paramName      = $"{entityName}_p";
 
                     var entityTypeFromModel = builder.Model.FindEntityType(entityFullName);
-                    var queryFilter         = entityTypeFromModel.QueryFilter;
+
+                    
+
+                    var queryFilter         = entityTypeFromModel.GetQueryFilter();
                     var queryParam          = queryFilter?.Parameters.FirstOrDefault();
                     if (null != queryParam)
                     {
@@ -211,9 +214,7 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
 
                     ParameterExpression paramExpr = Expression.Parameter(entityType, paramName);
 
-                    //Expression bodyTenant = Expression.Equal(Expression.Property(paramExpr, "TenantId"), 
-                    //                                         Expression.Constant(CurrentTenantId)
-                    //                                        );
+                    
 
                     Expression bodyDeleted = Expression.Equal(Expression.Property(paramExpr, "Deleted"),
                                                               Expression.Constant(false)
@@ -228,7 +229,6 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
                     }
                     else
                     {
-                        //body = Expression.AndAlso(bodyDeleted, bodyTenant);
                         body = bodyDeleted;
                     }
 
