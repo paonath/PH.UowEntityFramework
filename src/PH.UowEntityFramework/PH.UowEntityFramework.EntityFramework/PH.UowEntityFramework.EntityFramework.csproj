@@ -17,7 +17,7 @@
     <PackageId>PH.UowEntityFramework.EntityFramework</PackageId>
     
     <Description>
-      NetStandard2.0 EntityFramework with Unit Of Work
+      NetStandard2.1 EntityFramework with Unit Of Work
     </Description>
 
     <PackageReleaseNotes>

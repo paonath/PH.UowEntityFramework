@@ -43,7 +43,7 @@ namespace PH.UowEntityFramework.XUnitTest
 
             uow.Commit("test");
 
-            Assert.NotEmpty(u.Id);
+            Assert.NotNull(u.CreatedTransaction);
 
 
         }
