@@ -7,7 +7,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	ProjectSection(SolutionItems) = preProject
 		Directory.Build.props = Directory.Build.props
 		..\..\LICENSE = ..\..\LICENSE
+		nuget_es_img.png = nuget_es_img.png
 		..\..\PackagesBuild.bat = ..\..\PackagesBuild.bat
+		phNugetIcon.ico = phNugetIcon.ico
 		..\..\README.md = ..\..\README.md
 	EndProjectSection
 EndProject
@@ -19,9 +21,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PH.UowEntityFramework.Entit
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Test", "Test", "{4F18BCA2-04F6-4830-B443-39AFE4BCFE3B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PH.UowEntityFramework.TestCtx", "PH.UowEntityFramework.TestCtx\PH.UowEntityFramework.TestCtx.csproj", "{806C1C33-500A-4919-9815-5737934E5B74}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PH.UowEntityFramework.TestCtx", "PH.UowEntityFramework.TestCtx\PH.UowEntityFramework.TestCtx.csproj", "{806C1C33-500A-4919-9815-5737934E5B74}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PH.UowEntityFramework.XUnitTest", "PH.UowEntityFramework.XUnitTest\PH.UowEntityFramework.XUnitTest.csproj", "{918EE10F-3C7D-419C-9B4A-879979C4F8A6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PH.UowEntityFramework.XUnitTest", "PH.UowEntityFramework.XUnitTest\PH.UowEntityFramework.XUnitTest.csproj", "{918EE10F-3C7D-419C-9B4A-879979C4F8A6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
