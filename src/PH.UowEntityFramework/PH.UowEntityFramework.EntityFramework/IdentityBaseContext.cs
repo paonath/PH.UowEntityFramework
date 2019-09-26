@@ -198,7 +198,34 @@ namespace PH.UowEntityFramework.EntityFramework
         /// <returns>IDbContextUnitOfWork instance initialized</returns>
         [NotNull]
         public new IDbContextUnitOfWork Initialize() => InitializeSelf();
-        
+
+        /// <summary>Initializes the context.</summary>
+        /// <param name="author">The author.</param>
+        /// <param name="identifier">The identifier.</param>
+        /// <returns>DbContext</returns>
+        /// <exception cref="System.ArgumentException">
+        /// Value cannot be null or empty. - author
+        /// or
+        /// Value cannot be null or empty. - identifier
+        /// </exception>
+        [NotNull]
+        public IdentityBaseContext<TUser, TRole, TKey> InitializeContext([NotNull] string author, [NotNull] string identifier)
+        {
+            if (string.IsNullOrEmpty(author) || string.IsNullOrWhiteSpace(author))
+            {
+                throw new ArgumentException("Value cannot be null or empty.", nameof(author));
+            }
+
+            if (string.IsNullOrEmpty(identifier) || string.IsNullOrWhiteSpace(identifier))
+            {
+                throw new ArgumentException("Value cannot be null or empty.", nameof(identifier));
+            }
+
+            Author = author;
+            Identifier = identifier;
+
+            return InitializeSelf();
+        }
     }
 
 
