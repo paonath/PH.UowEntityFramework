@@ -3,15 +3,17 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PH.UowEntityFramework.TestCtx;
 
 namespace PH.UowEntityFramework.TestCtx.Migrations
 {
     [DbContext(typeof(DebugCtx))]
-    partial class DebugCtxModelSnapshot : ModelSnapshot
+    [Migration("20190926151604_nodes")]
+    partial class nodes
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -256,18 +258,15 @@ namespace PH.UowEntityFramework.TestCtx.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<long>("CreatedTransactionId")
-                        .HasColumnName("CreatedTransactionId")
                         .HasColumnType("bigint");
 
                     b.Property<string>("DataId")
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<bool>("Deleted")
-                        .HasColumnName("Deleted")
                         .HasColumnType("bit");
 
                     b.Property<long?>("DeletedTransactionId")
-                        .HasColumnName("DeletedTransactionId")
                         .HasColumnType("bigint");
 
                     b.Property<string>("NodeName")
@@ -279,11 +278,9 @@ namespace PH.UowEntityFramework.TestCtx.Migrations
                     b.Property<byte[]>("Timestamp")
                         .IsConcurrencyToken()
                         .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnName("Timestamp")
                         .HasColumnType("rowversion");
 
                     b.Property<long>("UpdatedTransactionId")
-                        .HasColumnName("UpdatedTransactionId")
                         .HasColumnType("bigint");
 
                     b.HasKey("Id");
@@ -298,9 +295,7 @@ namespace PH.UowEntityFramework.TestCtx.Migrations
 
                     b.HasIndex("UpdatedTransactionId");
 
-                    b.HasIndex("Id", "Deleted", "CreatedTransactionId", "UpdatedTransactionId", "DeletedTransactionId");
-
-                    b.ToTable("nodes_test");
+                    b.ToTable("NodeDebug");
                 });
 
             modelBuilder.Entity("PH.UowEntityFramework.TestCtx.Models.RoleDebug", b =>

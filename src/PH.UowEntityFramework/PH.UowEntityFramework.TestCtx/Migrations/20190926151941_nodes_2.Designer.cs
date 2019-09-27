@@ -3,15 +3,17 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PH.UowEntityFramework.TestCtx;
 
 namespace PH.UowEntityFramework.TestCtx.Migrations
 {
     [DbContext(typeof(DebugCtx))]
-    partial class DebugCtxModelSnapshot : ModelSnapshot
+    [Migration("20190926151941_nodes_2")]
+    partial class nodes_2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

@@ -91,5 +91,94 @@ namespace PH.UowEntityFramework.XUnitTest
             Assert.NotEqual(data.CreatedTransaction.Id, data.UpdatedTransaction.Id);
         }
 
+        [Fact]
+        public async void CreateSomeNodeData()
+        {
+            var store = Scope.Resolve<DebugCtx>();
+            var uow   = Scope.Resolve<IUnitOfWork>();
+            var user  = await store.Users.FirstOrDefaultAsync();
+
+            var data = new DataDebug()
+            {
+                Id     = $"Data from {user.Id} - {NewId.Next()}",
+                Author = user,
+                Title  = $"Simple title {DateTime.Now:O}"
+            };
+
+            await store.MyData.AddAsync(data);
+
+
+            var node = new NodeDebug()
+            {
+                Id       = NewId.Next().ToString(),
+                Data     = data,
+                NodeName = "A Test"
+            };
+
+            await store.Nodes.AddAsync(node);
+
+            await store.SaveChangesAsync();
+
+            uow.Commit("create some node data");
+
+            Assert.NotNull(node.CreatedTransaction);
+            Assert.NotNull(node.UpdatedTransaction);
+
+        }
+        
+
+
+        [Fact]
+        public async void CreateSomeNodeChildren()
+        {
+            var store = Scope.Resolve<DebugCtx>();
+            var uow   = Scope.Resolve<IUnitOfWork>();
+            var parent  = await store.Nodes.FirstOrDefaultAsync(x => x.Parent == null);
+
+
+
+            var node = new NodeDebug()
+            {
+                Id = NewId.Next().ToString(),
+                Data = new DataDebug()
+                    {Id = $"From Node {DateTime.Now.Ticks}", Author = parent.Data.Author, Title = "runtime created "},
+                NodeName = "A Test",
+                Parent   = parent
+            };
+
+            await store.Nodes.AddAsync(node);
+
+            parent.NodeName = $"mod {parent.NodeName}";
+            await store.Nodes.UpdateAsync(parent);
+
+
+            await store.SaveChangesAsync();
+
+            uow.Commit("create some node data adv");
+
+            Assert.NotNull(node.CreatedTransaction);
+            Assert.NotNull(node.UpdatedTransaction);
+
+        }
+
+        [Fact]
+        public async void GetAudit()
+        {
+            var store = Scope.Resolve<DebugCtx>();
+            var info = await store.FindAuditInfoAsync("00010000-0faa-0009-e0c9-08d74295d0da");
+
+
+            var perEntity = await store.FindAuditInfoAsync<NodeDebug, string>("00010000-0faa-0009-d43d-08d74295cf55");
+
+
+            var t = info.NewValues;
+
+
+            Assert.NotNull(info);
+            Assert.NotNull(perEntity);
+            Assert.NotEmpty(perEntity);
+
+        }
+
     }
 }

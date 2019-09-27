@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
@@ -11,6 +12,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
 using PH.UowEntityFramework.EntityFramework.Abstractions.Models;
+using PH.UowEntityFramework.EntityFramework.Audit;
 using PH.UowEntityFramework.EntityFramework.Infrastructure;
 using PH.UowEntityFramework.EntityFramework.Mapping;
 using PH.UowEntityFramework.UnitOfWork;
@@ -53,7 +55,43 @@ namespace PH.UowEntityFramework.EntityFramework
         /// <value>The uid.</value>
         public string Uid => Identifier;
 
-        
+        /// <summary>Finds the audit information.</summary>
+        /// <param name="id">The audit identifier.</param>
+        /// <returns></returns>
+        public async Task<Audit.AuditInfo> FindAuditInfoAsync(string id)
+        {
+            var i = await Audits.FirstOrDefaultAsync(x => x.Id == id);
+            
+            return i.ToAuditInfo();
+        }
+
+        /// <summary>Finds the audit information for a entity.</summary>
+        /// <typeparam name="TEntity">The type of the entity.</typeparam>
+        /// <typeparam name="TEntityKey">The type of the entity key.</typeparam>
+        /// <param name="id">The entity identifier.</param>
+        /// <returns></returns>
+        [ItemCanBeNull]
+        public async Task<AuditInfo[]> FindAuditInfoAsync<TEntity, TEntityKey>(TEntityKey id) 
+            where TEntity : class, IEntity<TEntityKey> where TEntityKey : IEquatable<TEntityKey>
+        {
+            
+
+            var entry = await this.Set<TEntity>().FirstOrDefaultAsync(x => x.Id.Equals(id));
+            if (null == entry)
+            {
+                return null;
+            }
+
+            var tbl = Model.FindEntityType(typeof(TEntity)).GetTableName();
+
+            var iid = ("{\"Id\":\"" + $"{id}" + "\"}");
+
+            var audits = await Audits.Where(x => x.TableName == tbl && x.KeyValues == iid).OrderBy(x => x.DateTime)
+                                     .ToArrayAsync();
+
+            return audits.Select(x => x.ToAuditInfo()).ToArray();
+
+        }
 
         #region SaveChanges
 

@@ -9,7 +9,7 @@ namespace PH.UowEntityFramework.TestCtx
     public class DebugCtx : PH.UowEntityFramework.EntityFramework.IdentityBaseContext<UserDebug,RoleDebug>
     {
         public DbSet<DataDebug> MyData { get; set; }
-
+        public DbSet<NodeDebug> Nodes { get; set; }
 
         /// <summary>
         /// 
@@ -27,6 +27,8 @@ namespace PH.UowEntityFramework.TestCtx
         {
             //
             builder.ApplyConfiguration(new DataDebugMap());
+            builder.ApplyConfiguration(new NodeDebugMap());
+
             builder.ApplyConfiguration(new UserDebugMap());
             builder.ApplyConfiguration(new RoleDebugMap());
         }
