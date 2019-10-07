@@ -12,3 +12,5 @@ PH.UowEntityFramework.EntityFramework:  [![NuGet Badge](https://buildstats.info/
 Package ported to netstandard2.1 for work with [Entity Framework Core 3](https://docs.microsoft.com/en-us/ef/core/what-is-new/ef-core-3.0/) 
 
 
+## Ef Core 2.2
+New 1.x v on branch [new2.2feat](https://github.com/paonath/PH.UowEntityFramework/tree/new2.2feat)
