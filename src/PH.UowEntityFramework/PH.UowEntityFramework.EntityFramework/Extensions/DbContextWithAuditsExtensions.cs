@@ -69,12 +69,12 @@ namespace PH.UowEntityFramework.EntityFramework.Extensions
                         }
                     }
 
-                    
+
                     var auditEntry = new AuditEntry(entry, context.TransactionAudit.Id, context.Author)
                     {
-                        
-                        TableName = entry.Metadata.GetTableName()
-                        
+
+                        TableName = entry.Metadata.Relational().TableName
+
                     };
 
 

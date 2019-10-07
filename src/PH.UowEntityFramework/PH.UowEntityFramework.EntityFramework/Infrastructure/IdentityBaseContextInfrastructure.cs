@@ -197,13 +197,10 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
                     #region QueryFilters
 
                     
-                    var paramName      = $"{entityName}_p";
+                    var paramName = $"{entityName}_p";
 
                     var entityTypeFromModel = builder.Model.FindEntityType(entityFullName);
-
-                    
-
-                    var queryFilter         = entityTypeFromModel.GetQueryFilter();
+                    var queryFilter         = entityTypeFromModel.QueryFilter;
                     var queryParam          = queryFilter?.Parameters.FirstOrDefault();
                     if (null != queryParam)
                     {

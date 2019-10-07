@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text.Json;
+
+using Newtonsoft.Json;
 
 namespace PH.UowEntityFramework.EntityFramework.Audit
 {
@@ -25,8 +26,8 @@ namespace PH.UowEntityFramework.EntityFramework.Audit
             {
                 return new Dictionary<string, object>();
             }
-
-            return JsonSerializer.Deserialize<Dictionary<string, object>>(JsonOldValues);
+            
+            return JsonConvert.DeserializeObject<Dictionary<string, object>>(JsonOldValues);
         }
 
         /// <summary>Gets or sets the new values.</summary>
@@ -44,7 +45,7 @@ namespace PH.UowEntityFramework.EntityFramework.Audit
                 return new Dictionary<string, object>();
             }
 
-            return JsonSerializer.Deserialize<Dictionary<string, object>>(JsonNewValues);
+            return JsonConvert.DeserializeObject<Dictionary<string, object>>(JsonNewValues);
         }
     }
 }

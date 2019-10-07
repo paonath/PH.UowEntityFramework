@@ -82,7 +82,7 @@ namespace PH.UowEntityFramework.EntityFramework
                 return null;
             }
 
-            var tbl = Model.FindEntityType(typeof(TEntity)).GetTableName();
+            var tbl = Model.FindEntityType(typeof(TEntity)).Relational().TableName;
 
             var iid = ("{\"Id\":\"" + $"{id}" + "\"}");
 

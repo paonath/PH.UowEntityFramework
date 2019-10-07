@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.1</TargetFramework>
+    <TargetFramework>netstandard2.0</TargetFramework>
 
     <!-- Generate XML docs -->
     <DocumentationFile>bin\$(Configuration)\PH.UowEntityFramework.UnitOfWork.xml</DocumentationFile>
@@ -17,13 +17,10 @@
     <PackageId>PH.UowEntityFramework.UnitOfWork</PackageId>
     
     <Description>
-      NetStandard2.1 Unit Of Work
+      NetStandard2.0 Unit Of Work
     </Description>
 
-    <PackageReleaseNotes>
-      First release.
-    </PackageReleaseNotes>
-    
+   
     <PackageTags>
       asp.net core, netcore, csharp, services, di, ef, entity framework core, DAL, data access layer, dbcontext, IdentityDbContext
     </PackageTags>
@@ -32,13 +29,6 @@
   <PropertyGroup>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <None Include="..\nuget_es_img.png" Pack="true" PackagePath=""/>
-  </ItemGroup>
-  <PropertyGroup>
-    <PackageIcon>nuget_es_img.png</PackageIcon>
   </PropertyGroup>
 
 </Project>
