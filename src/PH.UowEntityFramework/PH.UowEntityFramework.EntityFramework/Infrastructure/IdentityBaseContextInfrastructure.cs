@@ -12,6 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
 using PH.UowEntityFramework.EntityFramework.Abstractions.Models;
 using PH.UowEntityFramework.EntityFramework.Audit;
+using PH.UowEntityFramework.EntityFramework.Extensions;
 using PH.UowEntityFramework.EntityFramework.Mapping;
 using PH.UowEntityFramework.UnitOfWork;
 
@@ -291,33 +292,35 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
         /// <summary>Begins the transaction.</summary>
         public void BeginTransaction()
         {
-            DisposeTransaction();
+            BeginTransactionAsync().GetAwaiter().GetResult();
 
-            var t = Task.Run(async () =>
-            {
-                Transaction = await Database.BeginTransactionAsync(CancellationToken);
-                
-
-                var tyAudit = new TransactionAudit()
-                {
-                    Author = Author, UtcDateTime = DateTime.UtcNow, StrIdentifier = Identifier
-                };
-
-                var ty = await TransactionAudits.AddAsync(tyAudit, CancellationToken);
-                await SaveChangesAsync(true, CancellationToken);
-
-                TransactionAudit = ty.Entity;
-
-            });
-
-            t.Wait(CancellationToken);
-
-           
-
-            
-            UowLogger?.LogDebug($"Initialized Uow with {nameof(Identifier)} '{Identifier}'");
-            
         }
+
+        /// <summary>Begins the transaction asynchronous.</summary>
+        /// <returns></returns>
+        public async Task<Guid> BeginTransactionAsync()
+        {
+            DisposeTransaction();
+            Transaction = await Database.BeginTransactionAsync(CancellationToken);
+
+
+            var tyAudit = new TransactionAudit()
+            {
+                Author = Author,
+                UtcDateTime = DateTime.UtcNow,
+                StrIdentifier = Identifier
+            };
+
+            var ty = await TransactionAudits.AddAsync(tyAudit, CancellationToken);
+            await SaveChangesAsync(true, CancellationToken);
+
+            TransactionAudit = ty.Entity;
+
+            UowLogger?.LogDebug($"Initialized Uow with {nameof(Identifier)} '{Identifier}'");
+
+            return Transaction.TransactionId;
+        }
+
 
         /// <summary>Disposes the transaction.</summary>
         public void DisposeTransaction()
@@ -342,7 +345,20 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
         public void Commit([CanBeNull] string logMessage)
         {
 
-            var transactionCommitMessage = "";
+            CommitAsync(logMessage).GetAwaiter().GetResult();
+        }
+
+        /// <summary> Perform Transaction Commit on a Db and write a custom log message related to this commit asynchronous.
+        ///
+        /// On Error automatically perform a <see cref="Rollback"/>
+        /// </summary>
+        /// <param name="logMessage">The log message.</param>
+        /// <returns></returns>
+        public async Task<int> CommitAsync([CanBeNull] string logMessage)
+        {
+            int r = 0;
+
+             var transactionCommitMessage = "";
             if (!string.IsNullOrEmpty(logMessage) && !string.IsNullOrWhiteSpace(logMessage))
             {
                 UowLogger?.LogInformation($"Commit - {logMessage}");
@@ -386,14 +402,9 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
 
 
 
-                var t = Task.Run(async () =>
-                {
+                
                     TransactionAudits.Update(TransactionAudit);
-                    await SaveChangesAsync(CancellationToken);
-                });
-
-                t.Wait(CancellationToken);
-
+                    r = await SaveChangesAsync(CancellationToken);
 
 
                 UowLogger?.LogDebug($"Commit Transaction '{Identifier}'");
@@ -412,7 +423,7 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
                 }   
             }
 
-          
+            return r;
         }
 
         /// <summary>

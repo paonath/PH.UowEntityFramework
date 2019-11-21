@@ -77,7 +77,7 @@ namespace PH.UowEntityFramework.EntityFramework.Audit
                 NewValues     = add,
                 TransactionId = TransactionId,
                 Author        = Author,
-                Id            = $"{NewId.Next()}"
+                Id            = $"{Guid.NewGuid():N}"
             };
 
             return audit;
