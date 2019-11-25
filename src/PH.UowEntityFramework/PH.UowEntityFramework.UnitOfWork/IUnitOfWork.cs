@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 
 namespace PH.UowEntityFramework.UnitOfWork
 {
@@ -27,6 +28,14 @@ namespace PH.UowEntityFramework.UnitOfWork
         /// </summary>
         /// <param name="logMessage"></param>
         void Commit(string logMessage);
+
+        /// <summary> Perform Transaction Commit on a Db and write a custom log message related to this commit asynchronous.
+        ///
+        /// On Error automatically perform a <see cref="Rollback"/>
+        /// </summary>
+        /// <param name="logMessage">The log message.</param>
+        /// <returns></returns>
+        Task<int> CommitAsync(string logMessage);
 
         /// <summary>
         /// Rollback changes on Db Transaction.

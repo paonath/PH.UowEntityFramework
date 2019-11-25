@@ -34,20 +34,24 @@ namespace PH.UowEntityFramework.EntityFramework
         where TRole : IdentityRole<TKey>, IEntity<TKey>
         where TKey : IEquatable<TKey>
     {
-       
 
-
+        /// <summary>
+        /// Gets or sets a value indicating whether auditing enabled.
+        /// </summary>
+        /// <value><c>true</c> if auditing enabled; otherwise, <c>false</c>.</value>
+        public bool AuditingEnabled { get; set; }
 
 
         /// <summary>
         /// Initializes a new instance of the <see cref="IdentityBaseContext{TUser, TRole, TKey}"/> class.
         /// </summary>
         /// <param name="options">The options.</param>
+        /// <param name="auditingEnabled">the audit enable (default false)</param>
         /// <exception cref="ArgumentNullException">options</exception>
-        protected IdentityBaseContext([NotNull] DbContextOptions options)
+        protected IdentityBaseContext([NotNull] DbContextOptions options, bool auditingEnabled = false)
             : base(options)
         {
-           
+            AuditingEnabled = auditingEnabled;
         }
 
 
@@ -60,6 +64,11 @@ namespace PH.UowEntityFramework.EntityFramework
         /// <returns></returns>
         public async Task<Audit.AuditInfo> FindAuditInfoAsync(string id)
         {
+            if (!AuditingEnabled)
+            {
+                return null;
+            }
+
             var i = await Audits.FirstOrDefaultAsync(x => x.Id == id);
             
             return i.ToAuditInfo();
@@ -75,6 +84,10 @@ namespace PH.UowEntityFramework.EntityFramework
             where TEntity : class, IEntity<TEntityKey> where TEntityKey : IEquatable<TEntityKey>
         {
             
+            if (!AuditingEnabled)
+            {
+                return null;
+            }
 
             var entry = await this.Set<TEntity>().FirstOrDefaultAsync(x => x.Id.Equals(id));
             if (null == entry)
@@ -82,7 +95,7 @@ namespace PH.UowEntityFramework.EntityFramework
                 return null;
             }
 
-            var tbl = Model.FindEntityType(typeof(TEntity)).GetTableName();
+            var tbl = Model.FindEntityType(typeof(TEntity)).Relational().TableName;
 
             var iid = ("{\"Id\":\"" + $"{id}" + "\"}");
 
@@ -127,20 +140,23 @@ namespace PH.UowEntityFramework.EntityFramework
         public sealed override int SaveChanges(bool acceptAllChangesOnSuccess)
         {
             InitializeSelf();
+            int result = 0;
 
             try
             {
-                var auditEntries = this.OnBeforeSaveChanges(Audits,ContextLogger); 
-                var result       = base.SaveChanges(acceptAllChangesOnSuccess);
-                this.OnAfterSaveChanges(Audits,auditEntries,ContextLogger);
-                Changecount += result;
-                return result;
+                var auditEntries = this.OnBeforeSaveChanges(AuditingEnabled,Audits,ContextLogger); 
+                    result = base.SaveChanges(acceptAllChangesOnSuccess);
+                    this.OnAfterSaveChanges(AuditingEnabled,Audits,auditEntries,ContextLogger);
+                    Changecount += result;
+
             }
             catch (Exception e)
             {
                 ContextLogger?.LogCritical(e, $"Error on SaveChanges: {e.Message} ");
                 throw;
             }
+
+            return result;
         }
 
         /// <summary>
@@ -191,15 +207,16 @@ namespace PH.UowEntityFramework.EntityFramework
         public sealed override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = new CancellationToken())
         {
             InitializeSelf();
-            
 
+            int result = 0;
             try
             {
-                var auditEntries = this.OnBeforeSaveChanges(Audits, ContextLogger);
-                var result = await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
-                await this.OnAfterSaveChangesAsync(Audits,auditEntries, ContextLogger);
+                var auditEntries = this.OnBeforeSaveChanges(AuditingEnabled,Audits, ContextLogger);
+                result       = await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+                await this.OnAfterSaveChangesAsync(AuditingEnabled,Audits,auditEntries, ContextLogger);
                 Changecount += result;
-                return result;
+           
+            
             }
             catch (Exception e)
             {
@@ -207,14 +224,11 @@ namespace PH.UowEntityFramework.EntityFramework
                throw;
             }
 
-           
+            return result;
         }
 
         #endregion
 
-
-        //[NotNull]
-        //public IDbContextUnitOfWork Initialize() => InitializeSelf();
 
         /// <summary>Initializes the self instance.</summary>
         /// <returns></returns>

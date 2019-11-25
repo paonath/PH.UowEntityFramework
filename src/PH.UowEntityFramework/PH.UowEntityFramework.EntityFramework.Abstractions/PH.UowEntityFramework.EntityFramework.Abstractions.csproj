@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.1</TargetFramework>
+    <TargetFramework>netstandard2.0</TargetFramework>
 
     <!-- Generate XML docs -->
     <DocumentationFile>bin\$(Configuration)\PH.UowEntityFramework.EntityFramework.Abstractions.xml</DocumentationFile>
@@ -17,12 +17,10 @@
     <PackageId>PH.UowEntityFramework.EntityFramework.Abstractions</PackageId>
     
     <Description>
-      NetStandard2.1 Unit Of Work
+      NetStandard2.0 Unit Of Work
     </Description>
 
-    <PackageReleaseNotes>
-      First release.
-    </PackageReleaseNotes>
+  
     
     <PackageTags>
       asp.net core, netcore, csharp, services, di, ef, entity framework core, DAL, data access layer, dbcontext, IdentityDbContext
@@ -35,18 +33,19 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="..\nuget_es_img.png" Pack="true" PackagePath=""/>
+    <PackageReference Include="JetBrains.Annotations" Version="2019.1.3" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.2" />
+    <PackageReference Include="System.ComponentModel.Annotations" Version="4.6.0" />
+    <PackageReference Include="Microsoft.Extensions.Identity.Stores" Version="2.2.0">
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\nuget_es_img.png" Pack="true" PackagePath="" />
   </ItemGroup>
   <PropertyGroup>
     <PackageIcon>nuget_es_img.png</PackageIcon>
   </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="JetBrains.Annotations" Version="2019.1.3" />
-    <PackageReference Include="System.ComponentModel.Annotations" Version="4.6.0" />
-    <PackageReference Include="Microsoft.Extensions.Identity.Stores" Version="3.0.0">
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
-  </ItemGroup>
 
 </Project>

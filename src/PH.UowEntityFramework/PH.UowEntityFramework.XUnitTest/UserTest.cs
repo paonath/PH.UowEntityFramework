@@ -39,8 +39,8 @@ namespace PH.UowEntityFramework.XUnitTest
 
             };
 
-            await store.Users.AddAsync(u);
-
+            await store.Users.AddAsync(u).ConfigureAwait(false);
+            await store.SaveChangesAsync().ConfigureAwait(false);
             uow.Commit("test");
 
             Assert.NotNull(u.CreatedTransaction);
@@ -53,7 +53,7 @@ namespace PH.UowEntityFramework.XUnitTest
         {
             var store = Scope.Resolve<DebugCtx>();
             var uow   = Scope.Resolve<IUnitOfWork>();
-            var user = await store.Users.FirstOrDefaultAsync();
+            var user = await store.Users.FirstOrDefaultAsync().ConfigureAwait(false);
 
             var data = new DataDebug()
             {
@@ -62,8 +62,9 @@ namespace PH.UowEntityFramework.XUnitTest
                 Title  = $"Simple title {DateTime.Now:O}"
             };
 
-            await store.MyData.AddAsync(data);
-            await store.SaveChangesAsync();
+            await store.MyData.AddAsync(data).ConfigureAwait(false);
+            await store.SaveChangesAsync().ConfigureAwait(false);
+
 
             uow.Commit("create some data");
 
