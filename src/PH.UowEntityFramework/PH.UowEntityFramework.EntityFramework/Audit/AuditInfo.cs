@@ -10,7 +10,8 @@ namespace PH.UowEntityFramework.EntityFramework.Audit
     /// Entity's audit data
     /// </summary>
     /// <seealso cref="PH.UowEntityFramework.EntityFramework.Audit.AuditInfoBase" />
-    public class AuditInfo : AuditInfoBase
+    public class 
+        AuditInfo : AuditInfoBase
     {
         /// <summary>Gets or sets the old values.</summary>
         /// <value>The old values.</value>
