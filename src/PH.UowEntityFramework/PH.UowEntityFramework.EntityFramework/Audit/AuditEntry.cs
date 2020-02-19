@@ -44,43 +44,44 @@ namespace PH.UowEntityFramework.EntityFramework.Audit
         [NotNull]
         public Audit ToAudit()
         {
-            var settings = new JsonSerializerSettings()
-                {ReferenceLoopHandling = ReferenceLoopHandling.Ignore, Formatting = Formatting.None,};
-            byte[] old = null;
-            if(OldValues.Count > 0)
-            {
+            throw new NotImplementedException();
+            //var settings = new JsonSerializerSettings()
+            //    {ReferenceLoopHandling = ReferenceLoopHandling.Ignore, Formatting = Formatting.None,};
+            //byte[] old = null;
+            //if(OldValues.Count > 0)
+            //{
 
                 
-                old = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(OldValues, settings));
+            //    old = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(OldValues, settings));
                
-            }
+            //}
 
-            byte[] add = null;
-            if (NewValues.Count > 0)
-            {
-               
-
+            //byte[] add = null;
+            //if (NewValues.Count > 0)
+            //{
                
 
-                add = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(NewValues, settings));
+               
 
-            }
+            //    add = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(NewValues, settings));
+
+            //}
 
             
 
-            var audit = new Audit
-            {
-                TableName     = TableName,
-                DateTime      = DateTime.UtcNow,
-                KeyValues     = JsonConvert.SerializeObject(KeyValues, settings),
-                OldValues     = old,
-                NewValues     = add,
-                TransactionId = TransactionId,
-                Author        = Author,
-                Id            = $"{Guid.NewGuid():N}"
-            };
+            //var audit = new Audit
+            //{
+            //    TableName     = TableName,
+            //    DateTime      = DateTime.UtcNow,
+            //    KeyValues     = JsonConvert.SerializeObject(KeyValues, settings),
+            //    OldValues     = old,
+            //    NewValues     = add,
+            //    TransactionId = TransactionId,
+            //    Author        = Author,
+            //    Id            = $"{Guid.NewGuid():N}"
+            //};
 
-            return audit;
+            //return audit;
         }
     }
 }

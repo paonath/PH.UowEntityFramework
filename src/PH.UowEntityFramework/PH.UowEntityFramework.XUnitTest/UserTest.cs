@@ -39,8 +39,8 @@ namespace PH.UowEntityFramework.XUnitTest
 
             };
 
-            await store.Users.AddAsync(u).ConfigureAwait(false);
-            await store.SaveChangesAsync().ConfigureAwait(false);
+            await store.Users.AddAsync(u);
+            await store.SaveChangesAsync();
             uow.Commit("test");
 
             Assert.NotNull(u.CreatedTransaction);

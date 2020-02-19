@@ -22,10 +22,6 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
         /// <value>The scope dictionary.</value>
         Dictionary<int, string> ScopeDictionary { get; }
 
-        /// <summary>Initializes this instance.</summary>
-        /// <returns></returns>
-        IBaseContext Initialize();
-
         /// <summary>
         /// Identifier
         /// </summary>

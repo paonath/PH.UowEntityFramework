@@ -25,9 +25,6 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
         /// <value><c>true</c> if initialized; otherwise, <c>false</c>.</value>
         bool Initialized { get; }
 
-        /// <summary>Initializes this instance.</summary>
-        /// <returns>IDbContextUnitOfWork instance initialized</returns>
-        IDbContextUnitOfWork Initialize();
 
         /// <summary>
         /// Fired On Committed Unit Of Work

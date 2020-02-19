@@ -65,12 +65,8 @@ namespace PH.UowEntityFramework.XUnitTest
             
 
 
-            containerBuilder.Register(x => new DebugCtx(ctxBuilder.Options))
-                            .OnActivated(x =>
-                            {
-                                x.Instance.InitializeContext("test author", NewId.Next().ToString());
-
-                            })
+            containerBuilder.Register(x => new DebugCtx(ctxBuilder.Options, $"{NewId.NextGuid():N}" , "test author 2" , true ))
+                            
                             .AsSelf()
                             .AsImplementedInterfaces()
                             .InstancePerLifetimeScope();
