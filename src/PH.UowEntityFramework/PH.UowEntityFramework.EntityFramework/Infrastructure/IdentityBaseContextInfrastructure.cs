@@ -154,6 +154,9 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
             
         }
 
+        /// <summary>Tracks the auditable entity asynchronous.</summary>
+        /// <param name="argument">The <see cref="EntityStateChangedEventArgs"/> instance containing the event data.</param>
+        /// <returns></returns>
         protected async Task<bool> TrackAuditableEntityAsync(EntityStateChangedEventArgs argument)
         {
             bool b = false;
@@ -171,6 +174,10 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
             }
             return b;
         }
+
+        /// <summary>Tracks the auditable entity asynchronous.</summary>
+        /// <param name="argument">The <see cref="EntityTrackedEventArgs"/> instance containing the event data.</param>
+        /// <returns></returns>
         protected async Task<bool> TrackAuditableEntityAsync([NotNull] EntityTrackedEventArgs argument)
         {
             bool b = false;
@@ -227,8 +234,7 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
                         
                     var t = FindEntityType(e);
 
-                    var dbg = entry.CurrentValues;
-
+                    
                     //var json = System.Text.Json.JsonSerializer.Serialize(entity, EntityJsonSerializerOptions);
                     var vl = JsonSerializer.SerializeToUtf8Bytes(entry.Entity, EntityJsonSerializerOptions);
                     var a = new Audit.Audit()
@@ -442,34 +448,8 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
             return _currenTransactionAudit;
         }
 
-        /// <summary>Ensures the transaction value.</summary>
-        /// <param name="incoming">The incoming.</param>
-        /// <param name="method">The method.</param>
-        /// <returns></returns>
-        protected virtual object EnsureTransactionValue(object incoming, EventMethod method)
-        {
-            return EnsureTransactionValueAsync(incoming, method).GetAwaiter().GetResult();
-        }
+        
 
-        /// <summary>Ensures the transaction value asynchronous.</summary>
-        /// <param name="incoming">The incoming.</param>
-        /// <param name="method">The method.</param>
-        /// <returns></returns>
-        [ItemCanBeNull]
-        protected virtual async Task<object> EnsureTransactionValueAsync(object incoming, EventMethod method)
-        {
-            var t = await EnsureTransactionValueAsync(new object[] {incoming}, method);
-            return t.FirstOrDefault();
-        }
-
-        /// <summary>Ensures the transaction value.</summary>
-        /// <param name="incoming">The incoming.</param>
-        /// <param name="method">The method.</param>
-        /// <returns></returns>
-        protected virtual object[] EnsureTransactionValue(object[] incoming, EventMethod method)
-        {
-            return EnsureTransactionValueAsync(incoming, method).GetAwaiter().GetResult();
-        }
 
 
         private (IEntityType entityType, string TableName) FindEntityType(IEntity incoming)
@@ -491,79 +471,7 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
             return (entityType, tableName);
         }
 
-        /// <summary>Ensures the transaction value asynchronous.</summary>
-        /// <param name="incoming">The incoming.</param>
-        /// <param name="method">The method.</param>
-        /// <returns></returns>
-        [ItemNotNull]
-        protected virtual async Task<object[]> EnsureTransactionValueAsync(
-            [NotNull] object[] incoming, EventMethod method)
-        {
-            var r = new object[incoming.Length];
-            int c = 0;
 
-            
-
-            foreach (var entity in incoming)
-            {
-                if (entity is Audit.Audit || entity is TransactionAudit)
-                {
-                    return incoming;
-                }
-
-                if (entity is IEntity e)
-                {
-                    var transactionAudit = await EnsureTransactionAuditAsync();
-                    var t = FindEntityType(e);
-
-
-                    Changecount++;
-
-                    switch (method)
-                    {
-                        case EventMethod.Add:
-                            e.CreatedTransaction = transactionAudit;
-                            e.UpdatedTransaction = transactionAudit;
-                            break;
-                        case EventMethod.Update:
-                            e.UpdatedTransaction = transactionAudit;
-                            break;
-                        case EventMethod.Delete:
-                            e.DeletedTransaction = transactionAudit;
-                            e.Deleted            = true;
-                            break;
-                    }
-
-
-                    if (AuditingEnabled)
-                    {
-                        
-
-
-                        //var json = System.Text.Json.JsonSerializer.Serialize(entity, EntityJsonSerializerOptions);
-                        var vl = JsonSerializer.SerializeToUtf8Bytes(entity, EntityJsonSerializerOptions);
-                        var a = new Audit.Audit()
-                        {
-                            Author        = Author,
-                            Action        = $"{method}",
-                            DateTime      = DateTime.UtcNow,
-                            EntityName    = t.entityType.ClrType.Name,
-                            TableName     = t.TableName,
-                            Id            = $"{NewId.NextGuid():N}",
-                            KeyValue      = $"{GetIdValue(entity)}",
-                            TransactionId = transactionAudit.Id,
-                            Values        = vl
-                        };
-                        await Audits.AddAsync(a);
-                    }
-                }
-
-                r[c] = incoming[c];
-                c++;
-            }
-
-            return r;
-        }
 
         [CanBeNull]
         private static object GetIdValue([CanBeNull] object src)
@@ -586,30 +494,8 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
             Delete
         }
 
-        /// <summary>Ensures the transaction value.</summary>
-        /// <typeparam name="TEntity">The type of the entity.</typeparam>
-        /// <param name="entity">The entity.</param>
-        /// <param name="method">The method.</param>
-        /// <returns></returns>
-        protected virtual TEntity EnsureTransactionValue<TEntity>(TEntity entity, EventMethod method)
-            where TEntity : class
-        {
-            return EnsureTransactionValueAsync(entity, method).GetAwaiter().GetResult();
-        }
-
-        /// <summary>Ensures the transaction value asynchronous.</summary>
-        /// <typeparam name="TEntity">The type of the entity.</typeparam>
-        /// <param name="entity">The entity.</param>
-        /// <param name="method">The method.</param>
-        /// <returns></returns>
-        [ItemCanBeNull]
-        protected virtual async Task<TEntity> EnsureTransactionValueAsync<TEntity>(TEntity entity, EventMethod method)
-            where TEntity : class
-        {
-            var r = await EnsureTransactionValueAsync(new object[] {entity}, method);
-            return r.FirstOrDefault() as TEntity;
-        }
-
+        
+        
         #endregion
 
 
@@ -854,6 +740,7 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
                 var auditTran = EnsureTransactionAuditAsync().GetAwaiter().GetResult();
                 e.DeletedTransactionId = auditTran.Id;
                 e.DeletedTransaction = auditTran;
+                e.Deleted = true;
 
                 return base.Update(entity);
 
@@ -896,6 +783,7 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
                 var auditTran = EnsureTransactionAuditAsync().GetAwaiter().GetResult();
                 e.DeletedTransactionId = auditTran.Id;
                 e.DeletedTransaction   = auditTran;
+                e.Deleted = true;
 
                 return base.Update(entity);
 

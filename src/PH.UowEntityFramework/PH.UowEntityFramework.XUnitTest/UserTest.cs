@@ -83,8 +83,8 @@ namespace PH.UowEntityFramework.XUnitTest
             var data = await store.MyData.FirstOrDefaultAsync();
 
             data.Title = $"Mod {data.Title} {DateTime.UtcNow}";
-            //await store.MyData.UpdateAsync(data);
-            var xc = store.MyData.Update(data);
+            await store.MyData.UpdateAsync(data);
+            
 
             uow.Commit("edit some data");
 
@@ -164,6 +164,35 @@ namespace PH.UowEntityFramework.XUnitTest
 
             Assert.NotNull(node.CreatedTransaction);
             Assert.NotNull(node.UpdatedTransaction);
+
+        }
+
+        [Fact]
+        public async void RemoveSomeDataAsync()
+        {
+            var store = Scope.Resolve<DebugCtx>();
+            var uow   = Scope.Resolve<IUnitOfWork>();
+
+            var node = new NodeDebug()
+            {
+                Id       = NewId.Next().ToString(),
+                NodeName = "A Test for delete"
+            };
+
+            await store.Nodes.AddAsync(node);
+            await store.SaveChangesAsync();
+
+
+
+            var rem = store.Nodes.Remove(node);
+
+
+            await uow.CommitAsync("Delete a node");
+
+
+            Assert.NotNull(rem.Entity.DeletedTransaction);
+            Assert.True(rem.Entity.Deleted);
+
 
         }
 

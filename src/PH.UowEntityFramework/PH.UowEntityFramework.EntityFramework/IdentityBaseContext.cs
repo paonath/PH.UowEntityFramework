@@ -38,12 +38,12 @@ namespace PH.UowEntityFramework.EntityFramework
         where TKey : IEquatable<TKey>
     {
 
-        
+
         /// <summary>
-        /// 
+        /// Initializes a new instance of the <see cref="IdentityBaseContext{TUser, TRole, TKey}"/> class for migration purpouse.
         /// </summary>
-        /// <param name="migrationTime"></param>
-        /// <param name="options"></param>
+        /// <param name="migrationTime">The migration time.</param>
+        /// <param name="options">The options.</param>
         protected IdentityBaseContext(DateTime migrationTime,[NotNull] DbContextOptions options)
             :base(migrationTime, options)
         { }
@@ -141,8 +141,12 @@ namespace PH.UowEntityFramework.EntityFramework
         where TUser : UserEntity, IEntity<string>
         where TRole : RoleEntity, IEntity<string>
     {
-
-        public IdentityBaseContext(DateTime migrationTime, DbContextOptions options):base(migrationTime, options)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="IdentityBaseContext{TUser, TRole}"/> class for Migration purpouse.
+        /// </summary>
+        /// <param name="migrationTime"></param>
+        /// <param name="options"></param>
+        protected IdentityBaseContext(DateTime migrationTime, DbContextOptions options):base(migrationTime, options)
         {
             
         }
