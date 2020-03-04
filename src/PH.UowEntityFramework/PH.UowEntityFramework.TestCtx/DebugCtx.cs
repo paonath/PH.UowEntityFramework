@@ -1,6 +1,9 @@
 ﻿using System;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Console;
+using Microsoft.Extensions.Options;
 using PH.UowEntityFramework.TestCtx.Models;
 using PH.UowEntityFramework.TestCtx.Models.Maps;
 
@@ -8,6 +11,9 @@ namespace PH.UowEntityFramework.TestCtx
 {
     public class DebugCtx : PH.UowEntityFramework.EntityFramework.IdentityBaseContext<UserDebug,RoleDebug>
     {
+
+       
+
         public DbSet<DataDebug> MyData { get; set; }
         public DbSet<NodeDebug> Nodes { get; set; }
 
@@ -38,6 +44,7 @@ namespace PH.UowEntityFramework.TestCtx
         {
         }
 
+        
 
         /// <summary>
         /// Custom On Model Creating

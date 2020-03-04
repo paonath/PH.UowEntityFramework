@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using PH.UowEntityFramework.TestCtx;
 using PH.UowEntityFramework.TestCtx.Models;
 using Xunit;
@@ -15,10 +16,13 @@ namespace PH.UowEntityFramework.XUnitTest
     public abstract class UnitTestBase
     {
         public ILifetimeScope Scope { get; }
+        public static NLog.Logger Logger;
 
 
         protected UnitTestBase()
         {
+            Logger = NLog.Web.NLogBuilder.ConfigureNLog("nlog.config").GetCurrentClassLogger();
+            Logger.Info("Starting test");
 
             var serviceCollection = new ServiceCollection();
 
@@ -26,12 +30,16 @@ namespace PH.UowEntityFramework.XUnitTest
             // to add logging services.
             serviceCollection.AddLogging();
 
+
             serviceCollection.AddDbContext<DebugCtx>(options =>
                                            {
                                                options
                                                    .UseSqlServer("Server=.\\SQLEXPRESS01;Database=Dbg3;User Id=sa;Password=sa;MultipleActiveResultSets=true")
                                                    .UseLazyLoadingProxies(true);
-                                              
+                                               options.EnableDetailedErrors(true);
+                                               options.EnableSensitiveDataLogging(true);
+                                               
+
                                            }
                                           );
 
@@ -63,6 +71,14 @@ namespace PH.UowEntityFramework.XUnitTest
             ctxBuilder.UseLazyLoadingProxies();
             ctxBuilder.UseSqlServer("Server=.\\SQLEXPRESS01;Database=Dbg3;User Id=sa;Password=sa;MultipleActiveResultSets=true");
             
+            
+            containerBuilder.RegisterInstance(Logger.Factory)
+                            .AsSelf()
+                            .AsImplementedInterfaces();
+
+            containerBuilder.RegisterGeneric(typeof(Logger<>))
+                            .As(typeof(ILogger<>))
+                            .SingleInstance();
 
 
             containerBuilder.Register(x => new DebugCtx(ctxBuilder.Options, $"{NewId.NextGuid():N}" , "test author 2" , true ))

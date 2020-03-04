@@ -11,6 +11,8 @@ using MassTransit;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Proxies.Internal;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
 using PH.UowEntityFramework.EntityFramework.Abstractions.Models;
@@ -72,11 +74,7 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
 
         private TransactionAudit _currenTransactionAudit;
 
-        /// <summary>
-        /// Current Transaction Audit.
-        /// </summary>
-        public TransactionAudit TransactionAudit => _currenTransactionAudit;
-
+        
 
         /// <summary>
         /// Gets or sets a value indicating whether this  is initialized.
@@ -145,9 +143,114 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
                 Converters    = {new EntityToJsonConverterFactory(), new DateTimeConverter()}
             };
 
+            var auditTran = EnsureTransactionAuditAsync().GetAwaiter().GetResult();
             if (initTransaction)
             {
-                //BeginTransaction();
+                BeginTransaction();
+            }
+
+            ChangeTracker.StateChanged += async (sender, args) => await TrackAuditableEntityAsync(args);
+            ChangeTracker.Tracked += async (sender, args) => await TrackAuditableEntityAsync(args);
+            
+        }
+
+        protected async Task<bool> TrackAuditableEntityAsync(EntityStateChangedEventArgs argument)
+        {
+            bool b = false;
+            switch (argument.NewState)
+            {
+                case EntityState.Detached:
+                case EntityState.Unchanged:
+                    break;
+                case EntityState.Deleted:
+                case EntityState.Modified:
+                case EntityState.Added:
+                    b = await TrackStatePrivateAsync(argument.Entry, argument.Entry.State);
+                    break;
+               
+            }
+            return b;
+        }
+        protected async Task<bool> TrackAuditableEntityAsync([NotNull] EntityTrackedEventArgs argument)
+        {
+            bool b = false;
+            switch (argument.Entry.State)
+            {
+                case EntityState.Detached:
+                case EntityState.Unchanged:
+                    break;
+
+                case EntityState.Deleted:
+                case EntityState.Modified:
+                case EntityState.Added:
+                    b = await TrackStatePrivateAsync(argument.Entry, argument.Entry.State);
+                    break;
+            }
+
+            return b;
+        }
+
+        private async Task<bool> TrackStatePrivateAsync([NotNull] EntityEntry entry, EntityState state)
+        {
+            if (entry.Entity is IEntity e)
+            {
+                Changecount++;
+
+                var auditTran = await EnsureTransactionAuditAsync();
+                EventMethod method = EventMethod.Add;
+                switch (state)
+                {
+                    case EntityState.Deleted:
+                        break;
+                    case EntityState.Modified:
+
+                        e.UpdatedTransaction = auditTran;
+                        e.UpdatedTransactionId = auditTran.Id;
+                        method = EventMethod.Update;
+
+                        if (null != e.DeletedTransaction)
+                        {
+                            method = EventMethod.Delete;
+                        }
+
+                        break;
+                    case EntityState.Added:
+                        e.CreatedTransaction = auditTran;
+                        e.CreatedTransactionId = auditTran.Id;
+                        e.UpdatedTransaction   = auditTran;
+                        e.UpdatedTransactionId = auditTran.Id;
+                        break;
+                }
+
+                if (AuditingEnabled)
+                {
+                        
+                    var t = FindEntityType(e);
+
+                    var dbg = entry.CurrentValues;
+
+                    //var json = System.Text.Json.JsonSerializer.Serialize(entity, EntityJsonSerializerOptions);
+                    var vl = JsonSerializer.SerializeToUtf8Bytes(entry.Entity, EntityJsonSerializerOptions);
+                    var a = new Audit.Audit()
+                    {
+                        Author        = Author,
+                        Action        = $"{method}",
+                        DateTime      = DateTime.UtcNow,
+                        EntityName    = t.entityType.ClrType.Name,
+                        TableName     = t.TableName,
+                        Id            = $"{NewId.NextGuid():N}",
+                        KeyValue      = $"{GetIdValue(entry.Entity)}",
+                        TransactionId = auditTran.Id,
+                        Values        = vl
+                    };
+                    await Audits.AddAsync(a);
+                }
+
+                return true;
+            }
+            else
+            {
+                return false;
             }
         }
 
@@ -323,7 +426,7 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
         /// <returns></returns>
         protected virtual async Task<TransactionAudit> EnsureTransactionAuditAsync()
         {
-            if (null == TransactionAudit)
+            if (null == _currenTransactionAudit)
             {
                 var t = new TransactionAudit()
                 {
@@ -336,7 +439,7 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
                 _currenTransactionAudit = e.Entity;
             }
 
-            return TransactionAudit;
+            return _currenTransactionAudit;
         }
 
         /// <summary>Ensures the transaction value.</summary>
@@ -368,6 +471,26 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
             return EnsureTransactionValueAsync(incoming, method).GetAwaiter().GetResult();
         }
 
+
+        private (IEntityType entityType, string TableName) FindEntityType(IEntity incoming)
+        {
+            Type t = null;
+            if (incoming is IProxyLazyLoader proxy)
+            {
+                t = incoming.GetType().BaseType;
+            }
+            else
+            {
+                t = incoming.GetType();
+            }
+
+            var entityType = this.Model.FindEntityType(t);
+            //var schema     = entityType?.GetSchema() ?? "";
+            var tableName = entityType?.GetTableName() ?? "";
+
+            return (entityType, tableName);
+        }
+
         /// <summary>Ensures the transaction value asynchronous.</summary>
         /// <param name="incoming">The incoming.</param>
         /// <param name="method">The method.</param>
@@ -379,6 +502,7 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
             var r = new object[incoming.Length];
             int c = 0;
 
+            
 
             foreach (var entity in incoming)
             {
@@ -390,7 +514,7 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
                 if (entity is IEntity e)
                 {
                     var transactionAudit = await EnsureTransactionAuditAsync();
-                    var t                = entity.GetType();
+                    var t = FindEntityType(e);
 
 
                     Changecount++;
@@ -405,7 +529,7 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
                             e.UpdatedTransaction = transactionAudit;
                             break;
                         case EventMethod.Delete:
-                            e.DeletedTransaction = TransactionAudit;
+                            e.DeletedTransaction = transactionAudit;
                             e.Deleted            = true;
                             break;
                     }
@@ -413,6 +537,9 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
 
                     if (AuditingEnabled)
                     {
+                        
+
+
                         //var json = System.Text.Json.JsonSerializer.Serialize(entity, EntityJsonSerializerOptions);
                         var vl = JsonSerializer.SerializeToUtf8Bytes(entity, EntityJsonSerializerOptions);
                         var a = new Audit.Audit()
@@ -420,10 +547,11 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
                             Author        = Author,
                             Action        = $"{method}",
                             DateTime      = DateTime.UtcNow,
-                            EntityName    = t.Name,
+                            EntityName    = t.entityType.ClrType.Name,
+                            TableName     = t.TableName,
                             Id            = $"{NewId.NextGuid():N}",
                             KeyValue      = $"{GetIdValue(entity)}",
-                            TransactionId = TransactionAudit.Id,
+                            TransactionId = transactionAudit.Id,
                             Values        = vl
                         };
                         await Audits.AddAsync(a);
@@ -503,13 +631,12 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
         /// </returns>
         public sealed override EntityEntry<TEntity> Add<TEntity>(TEntity entity)
         {
-            if (entity is Audit.Audit || entity is TransactionAudit)
+            if (!(entity is Audit.Audit) && !(entity is TransactionAudit))
             {
-                return base.Add(entity);
+                var auditTran = EnsureTransactionAuditAsync().GetAwaiter().GetResult();
             }
-
-            var e = EnsureTransactionValue(entity, EventMethod.Add);
-            return base.Add(e);
+            
+            return base.Add(entity);
         }
 
         /// <summary>
@@ -529,13 +656,12 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
         /// </returns>
         public override EntityEntry Add(object entity)
         {
-            if (entity is Audit.Audit || entity is TransactionAudit)
+            if (!(entity is Audit.Audit) && !(entity is TransactionAudit))
             {
-                return base.Add(entity);
+                var auditTran = EnsureTransactionAuditAsync().GetAwaiter().GetResult();
             }
 
-            var e = EnsureTransactionValue(entity, EventMethod.Add);
-            return base.Add(e);
+            return base.Add(entity);
         }
 
 
@@ -562,13 +688,12 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
         public sealed override async ValueTask<EntityEntry<TEntity>> AddAsync<TEntity>(
             TEntity entity, CancellationToken cancellationToken = new CancellationToken())
         {
-            if (entity is Audit.Audit || entity is TransactionAudit)
+            if (!(entity is Audit.Audit) && !(entity is TransactionAudit))
             {
-                return await base.AddAsync(entity, cancellationToken);
+                var auditTran = await EnsureTransactionAuditAsync();
             }
-
-            var e = await EnsureTransactionValueAsync(entity, EventMethod.Add);
-            return await base.AddAsync(e, cancellationToken);
+            
+            return await base.AddAsync(entity, cancellationToken);
         }
 
         /// <summary>
@@ -597,13 +722,12 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
                                                                      CancellationToken cancellationToken =
                                                                          new CancellationToken())
         {
-            if (entity is Audit.Audit || entity is TransactionAudit)
+            if (!(entity is Audit.Audit) && !(entity is TransactionAudit))
             {
-                return await base.AddAsync(entity, cancellationToken);
+                var auditTran = await EnsureTransactionAuditAsync();
             }
-
-            var e = await EnsureTransactionValueAsync(entity, EventMethod.Add);
-            return await base.AddAsync(e, cancellationToken);
+            
+            return await base.AddAsync(entity, cancellationToken);
         }
 
 
@@ -644,13 +768,12 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
         /// </returns>
         public sealed override EntityEntry<TEntity> Update<TEntity>(TEntity entity)
         {
-            if (entity is Audit.Audit || entity is TransactionAudit)
+            if (!(entity is Audit.Audit) && !(entity is TransactionAudit))
             {
-                return base.Update(entity);
+                var auditTran = EnsureTransactionAuditAsync().GetAwaiter().GetResult();
             }
 
-            var e = EnsureTransactionValue(entity, EventMethod.Update);
-            return base.Update(e);
+            return base.Update(entity);
         }
 
 
@@ -690,13 +813,12 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
         /// </returns>
         public sealed override EntityEntry Update(object entity)
         {
-            if (entity is Audit.Audit || entity is TransactionAudit)
+            if (!(entity is Audit.Audit) && !(entity is TransactionAudit))
             {
-                return base.Update(entity);
+                var auditTran = EnsureTransactionAuditAsync().GetAwaiter().GetResult();
             }
 
-            var e = EnsureTransactionValue(entity, EventMethod.Update);
-            return base.Update(e);
+            return base.Update(entity);
         }
 
 
@@ -727,10 +849,14 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
         /// </returns>
         public sealed override EntityEntry<TEntity> Remove<TEntity>(TEntity entity)
         {
-            if (entity is IEntity)
+            if (entity is IEntity e)
             {
-                var e = EnsureTransactionValue(entity, EventMethod.Delete);
-                return base.Update(e);
+                var auditTran = EnsureTransactionAuditAsync().GetAwaiter().GetResult();
+                e.DeletedTransactionId = auditTran.Id;
+                e.DeletedTransaction = auditTran;
+
+                return base.Update(entity);
+
             }
             else
             {
@@ -765,10 +891,16 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
         /// </returns>
         public sealed override EntityEntry Remove(object entity)
         {
-            if (entity is IEntity)
+            if (entity is IEntity e)
             {
-                var e = EnsureTransactionValue(entity, EventMethod.Delete);
-                return base.Update(e);
+                var auditTran = EnsureTransactionAuditAsync().GetAwaiter().GetResult();
+                e.DeletedTransactionId = auditTran.Id;
+                e.DeletedTransaction   = auditTran;
+
+                return base.Update(entity);
+
+                //var e = EnsureTransactionValue(entity, EventMethod.Delete);
+                //return base.Update(e);
             }
             else
             {
@@ -784,8 +916,9 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
         /// <param name="entities"> The entities to add. </param>
         public sealed override void AddRange(params object[] entities)
         {
-            var r = EnsureTransactionValue(entities, EventMethod.Add);
-            base.AddRange(r);
+
+            var auditTran = EnsureTransactionAuditAsync().GetAwaiter().GetResult();
+            base.AddRange(entities);
         }
 
         /// <summary>
@@ -804,8 +937,11 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
         /// <returns> A task that represents the asynchronous operation. </returns>
         public sealed override async Task AddRangeAsync(params object[] entities)
         {
-            var r = await EnsureTransactionValueAsync(entities, EventMethod.Add);
-            await base.AddRangeAsync(r);
+            
+                var auditTran = await EnsureTransactionAuditAsync();
+           
+
+            await base.AddRangeAsync(entities);
         }
 
         /// <summary>
@@ -816,8 +952,10 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
         /// <param name="entities"> The entities to add. </param>
         public sealed override void AddRange(IEnumerable<object> entities)
         {
-            var r = EnsureTransactionValue(entities.ToArray(), EventMethod.Add);
-            base.AddRange(r);
+            var auditTran = EnsureTransactionAuditAsync().GetAwaiter().GetResult();
+           
+
+            base.AddRange(entities);
         }
 
         /// <summary>
@@ -840,8 +978,8 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
         public sealed override async Task AddRangeAsync(IEnumerable<object> entities,
                                                         CancellationToken cancellationToken = new CancellationToken())
         {
-            var r = await EnsureTransactionValueAsync(entities.ToArray(), EventMethod.Add);
-            await base.AddRangeAsync(r, cancellationToken);
+            var e = await EnsureTransactionAuditAsync();
+            await base.AddRangeAsync(entities, cancellationToken);
         }
 
 
@@ -877,8 +1015,8 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
         /// <param name="entities"> The entities to update. </param>
         public sealed override void UpdateRange(params object[] entities)
         {
-            var r = EnsureTransactionValue(entities, EventMethod.Update);
-            base.AddRange(r);
+            var e = EnsureTransactionAuditAsync().GetAwaiter().GetResult();
+            base.UpdateRange(entities);
         }
 
         /// <summary>
@@ -913,7 +1051,9 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
         /// <param name="entities"> The entities to update. </param>
         public sealed override void UpdateRange(IEnumerable<object> entities)
         {
-            this.UpdateRange(entities.ToArray());
+            var e = EnsureTransactionAuditAsync().GetAwaiter().GetResult();
+            base.UpdateRange(entities);
+            
         }
 
 
@@ -1044,14 +1184,14 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
             }
             else
             {
-                var d = DateTime.UtcNow - TransactionAudit.UtcDateTime;
-                TransactionAudit.MillisecDuration = d.TotalMilliseconds;
-                TransactionAudit.StrIdentifier    = Identifier;
+                var d = DateTime.UtcNow - _currenTransactionAudit.UtcDateTime;
+                _currenTransactionAudit.MillisecDuration = d.TotalMilliseconds;
+                _currenTransactionAudit.StrIdentifier    = Identifier;
 
 
                 if (transactionCommitMessage != "")
                 {
-                    TransactionAudit.CommitMessage = transactionCommitMessage;
+                    _currenTransactionAudit.CommitMessage = transactionCommitMessage;
                 }
 
                 if (ScopeDictionary.Count > 0)
@@ -1063,11 +1203,11 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
                         s = $"{s.Substring(0, 497)}...";
                     }
 
-                    TransactionAudit.Scopes = s;
+                    _currenTransactionAudit.Scopes = s;
                 }
 
 
-                TransactionAudits.Update(TransactionAudit);
+                TransactionAudits.Update(_currenTransactionAudit);
                 r = await SaveChangesAsync(CancellationToken);
 
 

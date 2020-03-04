@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Autofac;
 using MassTransit;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -81,8 +82,9 @@ namespace PH.UowEntityFramework.XUnitTest
 
             var data = await store.MyData.FirstOrDefaultAsync();
 
-            data.Title = $"Mod {data.Title}";
-            await store.MyData.UpdateAsync(data);
+            data.Title = $"Mod {data.Title} {DateTime.UtcNow}";
+            //await store.MyData.UpdateAsync(data);
+            var xc = store.MyData.Update(data);
 
             uow.Commit("edit some data");
 
@@ -134,7 +136,10 @@ namespace PH.UowEntityFramework.XUnitTest
         {
             var store = Scope.Resolve<DebugCtx>();
             var uow   = Scope.Resolve<IUnitOfWork>();
-            var parent  = await store.Nodes.FirstOrDefaultAsync(x => x.Parent == null);
+            var parent  = await store.Nodes.OrderByDescending(x => x.Timestamp).FirstOrDefaultAsync(x => x.Parent == null && x.Data != null);
+            
+            
+
 
 
 
@@ -142,7 +147,7 @@ namespace PH.UowEntityFramework.XUnitTest
             {
                 Id = NewId.Next().ToString(),
                 Data = new DataDebug()
-                    {Id = $"From Node {DateTime.Now.Ticks}", Author = parent.Data.Author, Title = "runtime created "},
+                    {Id = $"ATTACHED From Node {DateTime.Now.Ticks}", Author = parent.Data.Author, Title = "runtime created "},
                 NodeName = "A Test",
                 Parent   = parent
             };

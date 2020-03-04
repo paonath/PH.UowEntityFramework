@@ -176,25 +176,29 @@ namespace PH.UowEntityFramework.EntityFramework.Audit
 
             if (info.PropertyType.IsClass)
             {
-                if (typeof(IEntity).IsAssignableFrom(info.PropertyType))
+                if (typeof(Audit).IsAssignableFrom(info.PropertyType))
                 {
-                    var aEntity = info.GetValue(source);
-                    if (null != aEntity)
-                    {
-                        var id  = info.PropertyType.GetProperty("Id");
-                        var obj = id?.GetValue(aEntity);
-                        value = $"{obj}";
-                    }
+                    return false;
+                }
 
-
+                if (typeof(IEntity).IsAssignableFrom(info.PropertyType) || 
+                    typeof(TransactionAudit).IsAssignableFrom(info.PropertyType))
+                {
+                    value = "ref";
                     name = $"{name}->Id";
                     return true;
                 }
                 else
                 {
-                    var c = JsonConvert.SerializeObject(info.GetValue(source));
-                    value = c;
-                    return true;
+                    var isVirtual = source.GetType()?.GetProperty(info.Name)?.GetGetMethod().IsVirtual ?? false;
+                    if (!isVirtual)
+                    {
+                        var c = JsonConvert.SerializeObject(info.GetValue(source));
+                        value = c;
+                        return true;   
+                    }
+                    
+                    
                 }
 
             }

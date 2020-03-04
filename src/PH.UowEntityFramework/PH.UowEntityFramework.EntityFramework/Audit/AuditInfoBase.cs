@@ -20,6 +20,10 @@ namespace PH.UowEntityFramework.EntityFramework.Audit
 
         /// <summary>Gets or sets the name of the entity.</summary>
         /// <value>The name of the entity.</value>
+        public string TableName { get; set; }
+
+        /// <summary>Gets or sets the name of the entity.</summary>
+        /// <value>The name of the entity.</value>
         public string EntityName { get; set; }
 
         /// <summary>Gets or sets the date time.</summary>
