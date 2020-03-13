@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using Autofac;
 using MassTransit;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -39,8 +40,8 @@ namespace PH.UowEntityFramework.XUnitTest
 
             };
 
-            await store.Users.AddAsync(u).ConfigureAwait(false);
-            await store.SaveChangesAsync().ConfigureAwait(false);
+            await store.Users.AddAsync(u);
+            await store.SaveChangesAsync();
             uow.Commit("test");
 
             Assert.NotNull(u.CreatedTransaction);
@@ -81,8 +82,9 @@ namespace PH.UowEntityFramework.XUnitTest
 
             var data = await store.MyData.FirstOrDefaultAsync();
 
-            data.Title = $"Mod {data.Title}";
+            data.Title = $"Mod {data.Title} {DateTime.UtcNow}";
             await store.MyData.UpdateAsync(data);
+            
 
             uow.Commit("edit some data");
 
@@ -134,7 +136,10 @@ namespace PH.UowEntityFramework.XUnitTest
         {
             var store = Scope.Resolve<DebugCtx>();
             var uow   = Scope.Resolve<IUnitOfWork>();
-            var parent  = await store.Nodes.FirstOrDefaultAsync(x => x.Parent == null);
+            var parent  = await store.Nodes.OrderByDescending(x => x.Timestamp).FirstOrDefaultAsync(x => x.Parent == null && x.Data != null);
+            
+            
+
 
 
 
@@ -142,7 +147,7 @@ namespace PH.UowEntityFramework.XUnitTest
             {
                 Id = NewId.Next().ToString(),
                 Data = new DataDebug()
-                    {Id = $"From Node {DateTime.Now.Ticks}", Author = parent.Data.Author, Title = "runtime created "},
+                    {Id = $"ATTACHED From Node {DateTime.Now.Ticks}", Author = parent.Data.Author, Title = "runtime created "},
                 NodeName = "A Test",
                 Parent   = parent
             };
@@ -159,6 +164,35 @@ namespace PH.UowEntityFramework.XUnitTest
 
             Assert.NotNull(node.CreatedTransaction);
             Assert.NotNull(node.UpdatedTransaction);
+
+        }
+
+        [Fact]
+        public async void RemoveSomeDataAsync()
+        {
+            var store = Scope.Resolve<DebugCtx>();
+            var uow   = Scope.Resolve<IUnitOfWork>();
+
+            var node = new NodeDebug()
+            {
+                Id       = NewId.Next().ToString(),
+                NodeName = "A Test for delete"
+            };
+
+            await store.Nodes.AddAsync(node);
+            await store.SaveChangesAsync();
+
+
+
+            var rem = store.Nodes.Remove(node);
+
+
+            await uow.CommitAsync("Delete a node");
+
+
+            Assert.NotNull(rem.Entity.DeletedTransaction);
+            Assert.True(rem.Entity.Deleted);
+
 
         }
 

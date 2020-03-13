@@ -8,7 +8,7 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
         DbSet<TransactionAudit> TransactionAudits { get; set; }
         //DbSet<Audit.Audit> Audits { get; set; }
 
-        TransactionAudit TransactionAudit { get; set; }
+        //TransactionAudit TransactionAudit { get; }
         string Author { get; set; }
     }
 }

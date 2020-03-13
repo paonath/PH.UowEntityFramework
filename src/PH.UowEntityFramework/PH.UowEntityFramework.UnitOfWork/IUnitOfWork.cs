@@ -9,6 +9,11 @@ namespace PH.UowEntityFramework.UnitOfWork
     /// <seealso cref="System.IDisposable" />
     public interface IUnitOfWork : IDisposable
     {
+
+        Guid BeginTransaction();
+        Task<Guid> BeginTransactionAsync();
+
+
        
         /// <summary>
         /// Identifier

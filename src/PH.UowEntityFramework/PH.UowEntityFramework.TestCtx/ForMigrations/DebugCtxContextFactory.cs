@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
 namespace PH.UowEntityFramework.TestCtx.ForMigrations
@@ -15,7 +16,7 @@ namespace PH.UowEntityFramework.TestCtx.ForMigrations
 
             optionsBuilder.UseSqlServer("Server=.\\SQLEXPRESS01;Database=Dbg3;User Id=sa;Password=sa;MultipleActiveResultSets=true");
 
-            return new DebugCtx(optionsBuilder.Options);
+            return new DebugCtx(DateTime.Now,optionsBuilder.Options);
         }
     }
 }

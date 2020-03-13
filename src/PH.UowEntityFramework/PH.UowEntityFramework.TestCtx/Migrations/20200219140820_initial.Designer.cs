@@ -10,14 +10,14 @@ using PH.UowEntityFramework.TestCtx;
 namespace PH.UowEntityFramework.TestCtx.Migrations
 {
     [DbContext(typeof(DebugCtx))]
-    [Migration("20190926105116_init")]
-    partial class init
+    [Migration("20200219140820_initial")]
+    partial class initial
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "3.0.0")
+                .HasAnnotation("ProductVersion", "3.1.1")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128)
                 .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
@@ -176,6 +176,10 @@ namespace PH.UowEntityFramework.TestCtx.Migrations
                         .HasColumnType("nvarchar(36)")
                         .HasMaxLength(36);
 
+                    b.Property<string>("Action")
+                        .HasColumnType("nvarchar(10)")
+                        .HasMaxLength(10);
+
                     b.Property<string>("Author")
                         .HasColumnType("nvarchar(255)")
                         .HasMaxLength(255);
@@ -183,20 +187,20 @@ namespace PH.UowEntityFramework.TestCtx.Migrations
                     b.Property<DateTime>("DateTime")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("KeyValues")
+                    b.Property<string>("EntityName")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<byte[]>("NewValues")
-                        .HasColumnType("varbinary(max)");
-
-                    b.Property<byte[]>("OldValues")
-                        .HasColumnType("varbinary(max)");
+                    b.Property<string>("KeyValue")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("TableName")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<long>("TransactionId")
                         .HasColumnType("bigint");
+
+                    b.Property<byte[]>("Values")
+                        .HasColumnType("varbinary(max)");
 
                     b.HasKey("Id");
 
@@ -250,6 +254,59 @@ namespace PH.UowEntityFramework.TestCtx.Migrations
                     b.HasIndex("Id", "Deleted", "CreatedTransactionId", "UpdatedTransactionId", "DeletedTransactionId");
 
                     b.ToTable("Data");
+                });
+
+            modelBuilder.Entity("PH.UowEntityFramework.TestCtx.Models.NodeDebug", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<long>("CreatedTransactionId")
+                        .HasColumnName("CreatedTransactionId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("DataId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<bool>("Deleted")
+                        .HasColumnName("Deleted")
+                        .HasColumnType("bit");
+
+                    b.Property<long?>("DeletedTransactionId")
+                        .HasColumnName("DeletedTransactionId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("NodeName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ParentId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<byte[]>("Timestamp")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnName("Timestamp")
+                        .HasColumnType("rowversion");
+
+                    b.Property<long>("UpdatedTransactionId")
+                        .HasColumnName("UpdatedTransactionId")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedTransactionId");
+
+                    b.HasIndex("DataId");
+
+                    b.HasIndex("DeletedTransactionId");
+
+                    b.HasIndex("ParentId");
+
+                    b.HasIndex("UpdatedTransactionId");
+
+                    b.HasIndex("Id", "Deleted", "CreatedTransactionId", "UpdatedTransactionId", "DeletedTransactionId");
+
+                    b.ToTable("nodes_test");
                 });
 
             modelBuilder.Entity("PH.UowEntityFramework.TestCtx.Models.RoleDebug", b =>
@@ -415,7 +472,7 @@ namespace PH.UowEntityFramework.TestCtx.Migrations
                     b.HasOne("PH.UowEntityFramework.TestCtx.Models.RoleDebug", null)
                         .WithMany()
                         .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 
@@ -424,7 +481,7 @@ namespace PH.UowEntityFramework.TestCtx.Migrations
                     b.HasOne("PH.UowEntityFramework.TestCtx.Models.UserDebug", null)
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 
@@ -433,7 +490,7 @@ namespace PH.UowEntityFramework.TestCtx.Migrations
                     b.HasOne("PH.UowEntityFramework.TestCtx.Models.UserDebug", null)
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 
@@ -442,13 +499,13 @@ namespace PH.UowEntityFramework.TestCtx.Migrations
                     b.HasOne("PH.UowEntityFramework.TestCtx.Models.RoleDebug", null)
                         .WithMany()
                         .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("PH.UowEntityFramework.TestCtx.Models.UserDebug", null)
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 
@@ -457,7 +514,7 @@ namespace PH.UowEntityFramework.TestCtx.Migrations
                     b.HasOne("PH.UowEntityFramework.TestCtx.Models.UserDebug", null)
                         .WithMany()
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 
@@ -466,23 +523,54 @@ namespace PH.UowEntityFramework.TestCtx.Migrations
                     b.HasOne("PH.UowEntityFramework.TestCtx.Models.UserDebug", "Author")
                         .WithMany("GeneratedData")
                         .HasForeignKey("AuthorId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("PH.UowEntityFramework.EntityFramework.Abstractions.Models.TransactionAudit", "CreatedTransaction")
                         .WithMany()
                         .HasForeignKey("CreatedTransactionId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("PH.UowEntityFramework.EntityFramework.Abstractions.Models.TransactionAudit", "DeletedTransaction")
                         .WithMany()
-                        .HasForeignKey("DeletedTransactionId");
+                        .HasForeignKey("DeletedTransactionId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("PH.UowEntityFramework.EntityFramework.Abstractions.Models.TransactionAudit", "UpdatedTransaction")
                         .WithMany()
                         .HasForeignKey("UpdatedTransactionId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("PH.UowEntityFramework.TestCtx.Models.NodeDebug", b =>
+                {
+                    b.HasOne("PH.UowEntityFramework.EntityFramework.Abstractions.Models.TransactionAudit", "CreatedTransaction")
+                        .WithMany()
+                        .HasForeignKey("CreatedTransactionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("PH.UowEntityFramework.TestCtx.Models.DataDebug", "Data")
+                        .WithMany("Nodes")
+                        .HasForeignKey("DataId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PH.UowEntityFramework.EntityFramework.Abstractions.Models.TransactionAudit", "DeletedTransaction")
+                        .WithMany()
+                        .HasForeignKey("DeletedTransactionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PH.UowEntityFramework.TestCtx.Models.NodeDebug", "Parent")
+                        .WithMany("Children")
+                        .HasForeignKey("ParentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PH.UowEntityFramework.EntityFramework.Abstractions.Models.TransactionAudit", "UpdatedTransaction")
+                        .WithMany()
+                        .HasForeignKey("UpdatedTransactionId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 
@@ -491,17 +579,18 @@ namespace PH.UowEntityFramework.TestCtx.Migrations
                     b.HasOne("PH.UowEntityFramework.EntityFramework.Abstractions.Models.TransactionAudit", "CreatedTransaction")
                         .WithMany()
                         .HasForeignKey("CreatedTransactionId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("PH.UowEntityFramework.EntityFramework.Abstractions.Models.TransactionAudit", "DeletedTransaction")
                         .WithMany()
-                        .HasForeignKey("DeletedTransactionId");
+                        .HasForeignKey("DeletedTransactionId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("PH.UowEntityFramework.EntityFramework.Abstractions.Models.TransactionAudit", "UpdatedTransaction")
                         .WithMany()
                         .HasForeignKey("UpdatedTransactionId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 
@@ -510,17 +599,18 @@ namespace PH.UowEntityFramework.TestCtx.Migrations
                     b.HasOne("PH.UowEntityFramework.EntityFramework.Abstractions.Models.TransactionAudit", "CreatedTransaction")
                         .WithMany()
                         .HasForeignKey("CreatedTransactionId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("PH.UowEntityFramework.EntityFramework.Abstractions.Models.TransactionAudit", "DeletedTransaction")
                         .WithMany()
-                        .HasForeignKey("DeletedTransactionId");
+                        .HasForeignKey("DeletedTransactionId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("PH.UowEntityFramework.EntityFramework.Abstractions.Models.TransactionAudit", "UpdatedTransaction")
                         .WithMany()
                         .HasForeignKey("UpdatedTransactionId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
 #pragma warning restore 612, 618

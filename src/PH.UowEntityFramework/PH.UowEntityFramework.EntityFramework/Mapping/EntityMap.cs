@@ -77,6 +77,7 @@ namespace PH.UowEntityFramework.EntityFramework.Mapping
             builder.Property(x => x.DeletedTransactionId)
                    .HasColumnName("DeletedTransactionId");
             
+            
            
 
             builder.Property(x => x.CreatedTransactionId)

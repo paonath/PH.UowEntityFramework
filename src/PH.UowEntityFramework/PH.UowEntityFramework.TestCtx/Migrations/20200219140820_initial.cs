@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace PH.UowEntityFramework.TestCtx.Migrations
 {
-    public partial class init : Migration
+    public partial class initial : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -12,13 +12,14 @@ namespace PH.UowEntityFramework.TestCtx.Migrations
                 columns: table => new
                 {
                     Id = table.Column<string>(maxLength: 36, nullable: false),
+                    Action = table.Column<string>(maxLength: 10, nullable: true),
                     TableName = table.Column<string>(nullable: true),
+                    EntityName = table.Column<string>(nullable: true),
                     DateTime = table.Column<DateTime>(nullable: false),
-                    KeyValues = table.Column<string>(nullable: true),
-                    OldValues = table.Column<byte[]>(nullable: true),
-                    NewValues = table.Column<byte[]>(nullable: true),
+                    KeyValue = table.Column<string>(nullable: true),
                     TransactionId = table.Column<long>(nullable: false),
-                    Author = table.Column<string>(maxLength: 255, nullable: true)
+                    Author = table.Column<string>(maxLength: 255, nullable: true),
+                    Values = table.Column<byte[]>(nullable: true)
                 },
                 constraints: table =>
                 {
@@ -279,6 +280,55 @@ namespace PH.UowEntityFramework.TestCtx.Migrations
                         onDelete: ReferentialAction.Restrict);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "nodes_test",
+                columns: table => new
+                {
+                    Id = table.Column<string>(nullable: false),
+                    Deleted = table.Column<bool>(nullable: false),
+                    DeletedTransactionId = table.Column<long>(nullable: true),
+                    CreatedTransactionId = table.Column<long>(nullable: false),
+                    UpdatedTransactionId = table.Column<long>(nullable: false),
+                    Timestamp = table.Column<byte[]>(rowVersion: true, nullable: true),
+                    NodeName = table.Column<string>(nullable: true),
+                    ParentId = table.Column<string>(nullable: true),
+                    DataId = table.Column<string>(nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_nodes_test", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_nodes_test_transaction_audit_CreatedTransactionId",
+                        column: x => x.CreatedTransactionId,
+                        principalTable: "transaction_audit",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_nodes_test_Data_DataId",
+                        column: x => x.DataId,
+                        principalTable: "Data",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_nodes_test_transaction_audit_DeletedTransactionId",
+                        column: x => x.DeletedTransactionId,
+                        principalTable: "transaction_audit",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_nodes_test_nodes_test_ParentId",
+                        column: x => x.ParentId,
+                        principalTable: "nodes_test",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_nodes_test_transaction_audit_UpdatedTransactionId",
+                        column: x => x.UpdatedTransactionId,
+                        principalTable: "transaction_audit",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
             migrationBuilder.CreateIndex(
                 name: "IX_AspNetRoleClaims_RoleId",
                 table: "AspNetRoleClaims",
@@ -384,6 +434,36 @@ namespace PH.UowEntityFramework.TestCtx.Migrations
                 columns: new[] { "Id", "Deleted", "CreatedTransactionId", "UpdatedTransactionId", "DeletedTransactionId" });
 
             migrationBuilder.CreateIndex(
+                name: "IX_nodes_test_CreatedTransactionId",
+                table: "nodes_test",
+                column: "CreatedTransactionId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_nodes_test_DataId",
+                table: "nodes_test",
+                column: "DataId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_nodes_test_DeletedTransactionId",
+                table: "nodes_test",
+                column: "DeletedTransactionId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_nodes_test_ParentId",
+                table: "nodes_test",
+                column: "ParentId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_nodes_test_UpdatedTransactionId",
+                table: "nodes_test",
+                column: "UpdatedTransactionId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_nodes_test_Id_Deleted_CreatedTransactionId_UpdatedTransactionId_DeletedTransactionId",
+                table: "nodes_test",
+                columns: new[] { "Id", "Deleted", "CreatedTransactionId", "UpdatedTransactionId", "DeletedTransactionId" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_transaction_audit_Id_StrIdentifier_Author_UtcDateTime_Timestamp",
                 table: "transaction_audit",
                 columns: new[] { "Id", "StrIdentifier", "Author", "UtcDateTime", "Timestamp" });
@@ -410,10 +490,13 @@ namespace PH.UowEntityFramework.TestCtx.Migrations
                 name: "Audits");
 
             migrationBuilder.DropTable(
-                name: "Data");
+                name: "nodes_test");
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");
+
+            migrationBuilder.DropTable(
+                name: "Data");
 
             migrationBuilder.DropTable(
                 name: "AspNetUsers");

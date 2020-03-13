@@ -20,6 +20,9 @@ using PH.UowEntityFramework.EntityFramework.Extensions;
 
 namespace PH.UowEntityFramework.EntityFramework
 {
+
+    //public abstract class BaseContext
+
     /// <summary>
     /// Identitity Context
     ///
@@ -35,12 +38,15 @@ namespace PH.UowEntityFramework.EntityFramework
         where TKey : IEquatable<TKey>
     {
 
-        /// <summary>
-        /// Gets or sets a value indicating whether auditing enabled.
-        /// </summary>
-        /// <value><c>true</c> if auditing enabled; otherwise, <c>false</c>.</value>
-        public bool AuditingEnabled { get; set; }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="IdentityBaseContext{TUser, TRole, TKey}"/> class for migration purpouse.
+        /// </summary>
+        /// <param name="migrationTime">The migration time.</param>
+        /// <param name="options">The options.</param>
+        protected IdentityBaseContext(DateTime migrationTime,[NotNull] DbContextOptions options)
+            :base(migrationTime, options)
+        { }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="IdentityBaseContext{TUser, TRole, TKey}"/> class.
@@ -49,11 +55,22 @@ namespace PH.UowEntityFramework.EntityFramework
         /// <param name="auditingEnabled">the audit enable (default false)</param>
         /// <exception cref="ArgumentNullException">options</exception>
         protected IdentityBaseContext([NotNull] DbContextOptions options, bool auditingEnabled = false)
-            : base(options)
+            : base(options, auditingEnabled)
         {
-            AuditingEnabled = auditingEnabled;
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="IdentityBaseContext{TUser, TRole, TKey}"/> class.
+        /// </summary>
+        /// <param name="options">The options.</param>
+        /// <param name="identifier">The identifier.</param>
+        /// <param name="author">The author.</param>
+        /// <param name="auditingEnabled">if set to <c>true</c> [auditing enabled].</param>
+        protected IdentityBaseContext([NotNull] DbContextOptions options, string identifier, string author, bool auditingEnabled = false)
+            : base(options, identifier, author, auditingEnabled)
+        {
+           
+        }
 
         /// <summary>Gets the uid.</summary>
         /// <value>The uid.</value>
@@ -84,200 +101,33 @@ namespace PH.UowEntityFramework.EntityFramework
             where TEntity : class, IEntity<TEntityKey> where TEntityKey : IEquatable<TEntityKey>
         {
             
-            if (!AuditingEnabled)
-            {
-                return null;
-            }
+            //if (!AuditingEnabled)
+            //{
+            //    return null;
+            //}
 
-            var entry = await this.Set<TEntity>().FirstOrDefaultAsync(x => x.Id.Equals(id));
-            if (null == entry)
-            {
-                return null;
-            }
+            //var entry = await this.Set<TEntity>().FirstOrDefaultAsync(x => x.Id.Equals(id));
+            //if (null == entry)
+            //{
+            //    return null;
+            //}
 
-            var tbl = Model.FindEntityType(typeof(TEntity)).Relational().TableName;
+            ////var tbl = Model.FindEntityType(typeof(TEntity)).Relational().TableName;
+            //var tbl = Model.FindEntityType(typeof(TEntity)).GetTableName();
 
-            var iid = ("{\"Id\":\"" + $"{id}" + "\"}");
+            //var iid = ("{\"Id\":\"" + $"{id}" + "\"}");
 
-            var audits = await Audits.Where(x => x.TableName == tbl && x.KeyValues == iid).OrderBy(x => x.DateTime)
-                                     .ToArrayAsync();
+            //var audits = await Audits.Where(x => x.TableName == tbl && x.KeyValues == iid).OrderBy(x => x.DateTime)
+            //                         .ToArrayAsync();
 
-            return audits.Select(x => x.ToAuditInfo()).ToArray();
+            //return audits.Select(x => x.ToAuditInfo()).ToArray();
+
+            throw new NotImplementedException("refactor");
 
         }
 
-        #region SaveChanges
+      
 
-
-
-        /// <summary>
-        /// Saves all changes made in this context to the database.
-        /// </summary>
-        /// <returns>
-        /// The number of state entries written to the database.
-        /// </returns>
-        /// <remarks>
-        /// This method will automatically call <see cref="M:Microsoft.EntityFrameworkCore.ChangeTracking.ChangeTracker.DetectChanges" /> to discover any
-        /// changes to entity instances before saving to the underlying database. This can be disabled via
-        /// <see cref="P:Microsoft.EntityFrameworkCore.ChangeTracking.ChangeTracker.AutoDetectChangesEnabled" />.
-        /// </remarks>
-        public sealed override int SaveChanges() => SaveChanges(true);
-        
-
-        /// <summary>
-        /// Saves all changes made in this context to the database.
-        /// </summary>
-        /// <param name="acceptAllChangesOnSuccess">Indicates whether <see cref="M:Microsoft.EntityFrameworkCore.ChangeTracking.ChangeTracker.AcceptAllChanges" /> is called after the changes have
-        /// been sent successfully to the database.</param>
-        /// <returns>
-        /// The number of state entries written to the database.
-        /// </returns>
-        /// <remarks>
-        /// This method will automatically call <see cref="M:Microsoft.EntityFrameworkCore.ChangeTracking.ChangeTracker.DetectChanges" /> to discover any
-        /// changes to entity instances before saving to the underlying database. This can be disabled via
-        /// <see cref="P:Microsoft.EntityFrameworkCore.ChangeTracking.ChangeTracker.AutoDetectChangesEnabled" />.
-        /// </remarks>
-        public sealed override int SaveChanges(bool acceptAllChangesOnSuccess)
-        {
-            InitializeSelf();
-            int result = 0;
-
-            try
-            {
-                var auditEntries = this.OnBeforeSaveChanges(AuditingEnabled,Audits,ContextLogger); 
-                    result = base.SaveChanges(acceptAllChangesOnSuccess);
-                    this.OnAfterSaveChanges(AuditingEnabled,Audits,auditEntries,ContextLogger);
-                    Changecount += result;
-
-            }
-            catch (Exception e)
-            {
-                ContextLogger?.LogCritical(e, $"Error on SaveChanges: {e.Message} ");
-                throw;
-            }
-
-            return result;
-        }
-
-        /// <summary>
-        /// Asynchronously saves all changes made in this context to the database.
-        /// </summary>
-        /// <param name="cancellationToken">A <see cref="T:System.Threading.CancellationToken" /> to observe while waiting for the task to complete.</param>
-        /// <returns>
-        /// A task that represents the asynchronous save operation. The task result contains the
-        /// number of state entries written to the database.
-        /// </returns>
-        /// <remarks>
-        /// <para>
-        /// This method will automatically call <see cref="M:Microsoft.EntityFrameworkCore.ChangeTracking.ChangeTracker.DetectChanges" /> to discover any
-        /// changes to entity instances before saving to the underlying database. This can be disabled via
-        /// <see cref="P:Microsoft.EntityFrameworkCore.ChangeTracking.ChangeTracker.AutoDetectChangesEnabled" />.
-        /// </para>
-        /// <para>
-        /// Multiple active operations on the same context instance are not supported.  Use 'await' to ensure
-        /// that any asynchronous operations have completed before calling another method on this context.
-        /// </para>
-        /// </remarks>
-        public sealed override async Task<int> SaveChangesAsync(
-            CancellationToken cancellationToken = new CancellationToken()) =>
-            await SaveChangesAsync(true, cancellationToken);
-        
-
-        /// <summary>
-        /// Asynchronously saves all changes made in this context to the database.
-        /// </summary>
-        /// <param name="acceptAllChangesOnSuccess">Indicates whether <see cref="M:Microsoft.EntityFrameworkCore.ChangeTracking.ChangeTracker.AcceptAllChanges" /> is called after the changes have
-        /// been sent successfully to the database.</param>
-        /// <param name="cancellationToken">A <see cref="T:System.Threading.CancellationToken" /> to observe while waiting for the task to complete.</param>
-        /// <returns>
-        /// A task that represents the asynchronous save operation. The task result contains the
-        /// number of state entries written to the database.
-        /// </returns>
-        /// <remarks>
-        /// <para>
-        /// This method will automatically call <see cref="M:Microsoft.EntityFrameworkCore.ChangeTracking.ChangeTracker.DetectChanges" /> to discover any
-        /// changes to entity instances before saving to the underlying database. This can be disabled via
-        /// <see cref="P:Microsoft.EntityFrameworkCore.ChangeTracking.ChangeTracker.AutoDetectChangesEnabled" />.
-        /// </para>
-        /// <para>
-        /// Multiple active operations on the same context instance are not supported.  Use 'await' to ensure
-        /// that any asynchronous operations have completed before calling another method on this context.
-        /// </para>
-        /// </remarks>
-        public sealed override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = new CancellationToken())
-        {
-            InitializeSelf();
-
-            int result = 0;
-            try
-            {
-                var auditEntries = this.OnBeforeSaveChanges(AuditingEnabled,Audits, ContextLogger);
-                result       = await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
-                await this.OnAfterSaveChangesAsync(AuditingEnabled,Audits,auditEntries, ContextLogger);
-                Changecount += result;
-           
-            
-            }
-            catch (Exception e)
-            {
-               ContextLogger?.LogCritical(e, $"Error on SaveChangesAsync: {e.Message} ");
-               throw;
-            }
-
-            return result;
-        }
-
-        #endregion
-
-
-        /// <summary>Initializes the self instance.</summary>
-        /// <returns></returns>
-        protected override IdentityBaseContext<TUser, TRole, TKey> InitializeSelf()
-        {
-            if (!Initialized)
-            {
-                Initialized = true;
-                BeginTransaction();
-
-            }
-
-            
-            return this;
-        }
-
-
-        /// <summary>Initializes this instance.</summary>
-        /// <returns>IDbContextUnitOfWork instance initialized</returns>
-        [NotNull]
-        public new IDbContextUnitOfWork Initialize() => InitializeSelf();
-
-        /// <summary>Initializes the context.</summary>
-        /// <param name="author">The author.</param>
-        /// <param name="identifier">The identifier.</param>
-        /// <returns>DbContext</returns>
-        /// <exception cref="System.ArgumentException">
-        /// Value cannot be null or empty. - author
-        /// or
-        /// Value cannot be null or empty. - identifier
-        /// </exception>
-        [NotNull]
-        public IdentityBaseContext<TUser, TRole, TKey> InitializeContext([NotNull] string author, [NotNull] string identifier)
-        {
-            if (string.IsNullOrEmpty(author) || string.IsNullOrWhiteSpace(author))
-            {
-                throw new ArgumentException("Value cannot be null or empty.", nameof(author));
-            }
-
-            if (string.IsNullOrEmpty(identifier) || string.IsNullOrWhiteSpace(identifier))
-            {
-                throw new ArgumentException("Value cannot be null or empty.", nameof(identifier));
-            }
-
-            Author = author;
-            Identifier = identifier;
-
-            return InitializeSelf();
-        }
     }
 
 
@@ -292,11 +142,34 @@ namespace PH.UowEntityFramework.EntityFramework
         where TRole : RoleEntity, IEntity<string>
     {
         /// <summary>
-        /// 
+        /// Initializes a new instance of the <see cref="IdentityBaseContext{TUser, TRole}"/> class for Migration purpouse.
         /// </summary>
+        /// <param name="migrationTime"></param>
         /// <param name="options"></param>
-        protected IdentityBaseContext([NotNull] DbContextOptions options)
-            : base(options)
+        protected IdentityBaseContext(DateTime migrationTime, DbContextOptions options):base(migrationTime, options)
+        {
+            
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="IdentityBaseContext{TUser, TRole}"/> class.
+        /// </summary>
+        /// <param name="options">The options.</param>
+        /// <param name="auditingEnabled">the audit enable (default false)</param>
+        protected IdentityBaseContext([NotNull] DbContextOptions options, bool auditingEnabled = false)
+            : base(options, auditingEnabled)
+        {
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="IdentityBaseContext{TUser, TRole}"/> class.
+        /// </summary>
+        /// <param name="options">The options.</param>
+        /// <param name="identifier">The identifier.</param>
+        /// <param name="author">The author.</param>
+        /// <param name="auditingEnabled">if set to <c>true</c> [auditing enabled].</param>
+        protected IdentityBaseContext([NotNull] DbContextOptions options, string identifier, string author, bool auditingEnabled = false)
+            : base(options, identifier, author, auditingEnabled)
         {
         }
     }
