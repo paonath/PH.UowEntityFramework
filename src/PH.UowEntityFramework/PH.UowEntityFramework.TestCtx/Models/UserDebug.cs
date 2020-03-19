@@ -3,7 +3,7 @@ using JetBrains.Annotations;
 
 namespace PH.UowEntityFramework.TestCtx.Models
 {
-    public class UserDebug : PH.UowEntityFramework.EntityFramework.Abstractions.Models.UserEntity
+    public class UserDebug : PH.UowEntityFramework.EntityFramework.Abstractions.Identity.Models.UserEntity
     {
         [CanBeNull] 
         public string Firstname { get; set; }

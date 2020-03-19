@@ -1,7 +1,10 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
+using PH.UowEntityFramework.EntityFramework.Abstractions.Models;
+using PH.UowEntityFramework.EntityFramework.Audit;
 
 namespace PH.UowEntityFramework.EntityFramework.Extensions
 {
@@ -18,5 +21,15 @@ namespace PH.UowEntityFramework.EntityFramework.Extensions
         [NotNull]
         public static Task<EntityEntry<T>> UpdateAsync<T>([NotNull] this DbSet<T> dbSet, [NotNull] T entity) where T : class 
             => Task.FromResult(dbSet.Update(entity));
+
+
+        //public static async Task<AuditInfo[]> GetAuditsAsync<TEntity, TKey>([NotNull] this DbSet<TEntity> dbSet, TKey id)
+        //    where TEntity : class, IEntity<TKey>
+        //    where TKey : IEquatable<TKey>
+        //{
+        //    dbSet.
+        //}
     }
+
+   
 }

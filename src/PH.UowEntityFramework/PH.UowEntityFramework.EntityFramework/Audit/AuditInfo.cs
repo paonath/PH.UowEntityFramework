@@ -10,43 +10,36 @@ namespace PH.UowEntityFramework.EntityFramework.Audit
     /// Entity's audit data
     /// </summary>
     /// <seealso cref="PH.UowEntityFramework.EntityFramework.Audit.AuditInfoBase" />
-    public class 
+    public abstract class 
         AuditInfo : AuditInfoBase
     {
-        /// <summary>Gets or sets the old values.</summary>
-        /// <value>The old values.</value>
-        public string JsonOldValues { get; set; }
-
-        /// <summary>Gets the old values as Dictionary, if any.</summary>
-        /// <value>The new values.</value>
-        public Dictionary<string, object> OldValues => GetOldValues();
-
-        private Dictionary<string, object> GetOldValues()
-        {
-            if (string.IsNullOrEmpty(JsonOldValues))
-            {
-                return new Dictionary<string, object>();
-            }
-            
-            return JsonConvert.DeserializeObject<Dictionary<string, object>>(JsonOldValues);
-        }
-
+        
         /// <summary>Gets or sets the new values.</summary>
         /// <value>The new values.</value>
-        public string JsonNewValues { get; set; }
+        public string JsonStringValues { get; set; }
 
         /// <summary>Gets the new values as Dictionary.</summary>
         /// <value>The new values.</value>
-        public Dictionary<string, object> NewValues => GetNewValues();
+        public Dictionary<string, object> Values => GetValues();
 
-        private Dictionary<string, object> GetNewValues()
+        private Dictionary<string, object> GetValues()
         {
-            if (string.IsNullOrEmpty(JsonNewValues))
+            if (string.IsNullOrEmpty(JsonStringValues))
             {
                 return new Dictionary<string, object>();
             }
 
-            return JsonConvert.DeserializeObject<Dictionary<string, object>>(JsonNewValues);
+            return System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(JsonStringValues);
+
+            //return JsonConvert.DeserializeObject<Dictionary<string, object>>(JsonStringValues);
         }
     }
+
+
+    internal class AuditInfoResult : AuditInfo
+    {
+        public int Version { get; set; }
+    }
+
+    
 }

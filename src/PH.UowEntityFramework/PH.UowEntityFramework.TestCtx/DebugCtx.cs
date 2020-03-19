@@ -9,7 +9,7 @@ using PH.UowEntityFramework.TestCtx.Models.Maps;
 
 namespace PH.UowEntityFramework.TestCtx
 {
-    public class DebugCtx : PH.UowEntityFramework.EntityFramework.IdentityBaseContext<UserDebug,RoleDebug>
+    public class DebugCtx : PH.UowEntityFramework.EntityFramework.Identity.IdentityBaseContext<UserDebug,RoleDebug>
     {
 
        

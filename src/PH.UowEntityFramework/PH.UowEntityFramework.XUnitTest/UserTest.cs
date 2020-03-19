@@ -136,7 +136,9 @@ namespace PH.UowEntityFramework.XUnitTest
         {
             var store = Scope.Resolve<DebugCtx>();
             var uow   = Scope.Resolve<IUnitOfWork>();
-            var parent  = await store.Nodes.OrderByDescending(x => x.Timestamp).FirstOrDefaultAsync(x => x.Parent == null && x.Data != null);
+            var parent  = await store
+                                .Nodes.OrderByDescending(x => x.Timestamp)
+                                .FirstOrDefaultAsync(x => x.Parent == null && x.Data != null);
             
             
 
@@ -154,7 +156,7 @@ namespace PH.UowEntityFramework.XUnitTest
 
             await store.Nodes.AddAsync(node);
 
-            parent.NodeName = $"mod {parent.NodeName}";
+            parent.NodeName = $"{parent.NodeName} {DateTime.Now:O}";
             await store.Nodes.UpdateAsync(parent);
 
 
@@ -200,16 +202,21 @@ namespace PH.UowEntityFramework.XUnitTest
         public async void GetAudit()
         {
             var store = Scope.Resolve<DebugCtx>();
-            var info = await store.FindAuditInfoAsync("00010000-0faa-0009-e0c9-08d74295d0da");
+            
+            var parent = await store.Nodes.OrderByDescending(x => x.Timestamp)
+                                    .Where(x => x.CreatedTransactionId != x.UpdatedTransactionId)
+                                    .FirstOrDefaultAsync();
+            
+
+                    
+
+            var perEntity = await store.FindAuditInfoAsync<NodeDebug, string>(parent.Id);
 
 
-            var perEntity = await store.FindAuditInfoAsync<NodeDebug, string>("00010000-0faa-0009-d43d-08d74295cf55");
+            var t = perEntity.FirstOrDefault()?.Values;
 
 
-            var t = info.NewValues;
-
-
-            Assert.NotNull(info);
+            Assert.NotNull(parent);
             Assert.NotNull(perEntity);
             Assert.NotEmpty(perEntity);
 

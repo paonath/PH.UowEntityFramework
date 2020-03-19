@@ -2,6 +2,7 @@
 using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("PH.UowEntityFramework.EntityFramework")]
+[assembly: InternalsVisibleTo("PH.UowEntityFramework.EntityFramework.Identity")]
 namespace PH.UowEntityFramework.UnitOfWork
 {
     /// <summary>

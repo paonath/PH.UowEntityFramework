@@ -1,6 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Runtime.CompilerServices;
+using Microsoft.EntityFrameworkCore;
 using PH.UowEntityFramework.EntityFramework.Abstractions.Models;
 
+[assembly:InternalsVisibleTo("PH.UowEntityFramework.EntityFramework.Identity")]
 namespace PH.UowEntityFramework.EntityFramework.Infrastructure
 {
     internal interface IAuditContext

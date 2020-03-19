@@ -25,6 +25,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PH.UowEntityFramework.TestC
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PH.UowEntityFramework.XUnitTest", "PH.UowEntityFramework.XUnitTest\PH.UowEntityFramework.XUnitTest.csproj", "{918EE10F-3C7D-419C-9B4A-879979C4F8A6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PH.UowEntityFramework.EntityFramework.Abstractions.Identity", "PH.UowEntityFramework.EntityFramework.Abstractions.Identity\PH.UowEntityFramework.EntityFramework.Abstractions.Identity.csproj", "{FC73D18D-7FA3-4CDE-B753-1DC5BF92D578}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PH.UowEntityFramework.EntityFramework.Identity", "PH.UowEntityFramework.EntityFramework.Identity\PH.UowEntityFramework.EntityFramework.Identity.csproj", "{CB60D33E-2797-4DDB-8FF1-C7EBDEAFE5F9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -51,6 +55,14 @@ Global
 		{918EE10F-3C7D-419C-9B4A-879979C4F8A6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{918EE10F-3C7D-419C-9B4A-879979C4F8A6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{918EE10F-3C7D-419C-9B4A-879979C4F8A6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FC73D18D-7FA3-4CDE-B753-1DC5BF92D578}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FC73D18D-7FA3-4CDE-B753-1DC5BF92D578}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FC73D18D-7FA3-4CDE-B753-1DC5BF92D578}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FC73D18D-7FA3-4CDE-B753-1DC5BF92D578}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CB60D33E-2797-4DDB-8FF1-C7EBDEAFE5F9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CB60D33E-2797-4DDB-8FF1-C7EBDEAFE5F9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CB60D33E-2797-4DDB-8FF1-C7EBDEAFE5F9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CB60D33E-2797-4DDB-8FF1-C7EBDEAFE5F9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

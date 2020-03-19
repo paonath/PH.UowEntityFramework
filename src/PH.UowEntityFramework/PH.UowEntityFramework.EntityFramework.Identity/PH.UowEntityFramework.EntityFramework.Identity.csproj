@@ -5,7 +5,7 @@
     <TargetFramework>netcoreapp3.1</TargetFramework>
 
     <!-- Generate XML docs -->
-    <DocumentationFile>bin\$(Configuration)\PH.UowEntityFramework.EntityFramework.xml</DocumentationFile>
+    <DocumentationFile>bin\$(Configuration)\PH.UowEntityFramework.EntityFramework.Identity.xml</DocumentationFile>
 
 
 
@@ -15,7 +15,7 @@
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     
-    <PackageId>PH.UowEntityFramework.EntityFramework</PackageId>
+    <PackageId>PH.UowEntityFramework.EntityFramework.Identity</PackageId>
     
     <Description>
       netcoreapp3.1 EntityFramework with Unit Of Work
@@ -23,7 +23,7 @@
 
     
     <PackageTags>
-      asp.net core, netcore, csharp, services, di, ef, entity framework core, DAL, data access layer, dbcontext
+      asp.net core, netcore, csharp, services, di, ef, entity framework core, DAL, data access layer, dbcontext, IdentityDbContext
     </PackageTags>
 
   </PropertyGroup>
@@ -33,6 +33,12 @@
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Compile Remove="Mapping\**" />
+    <EmbeddedResource Remove="Mapping\**" />
+    <None Remove="Mapping\**" />
+  </ItemGroup>
+
 
   <ItemGroup>
     <PackageReference Include="NewId" Version="3.0.2" />
@@ -40,16 +46,18 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Abstractions" Version="3.1.2" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="3.1.2" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Proxies" Version="3.1.2" />
+    <PackageReference Include="Microsoft.Extensions.Identity.Stores" Version="3.1.2" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="3.1.2" />
+
+    
 
 
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Mapping\" />
-  </ItemGroup>
-
-  <ItemGroup>
+    <ProjectReference Include="..\PH.UowEntityFramework.EntityFramework.Abstractions.Identity\PH.UowEntityFramework.EntityFramework.Abstractions.Identity.csproj" />
     <ProjectReference Include="..\PH.UowEntityFramework.EntityFramework.Abstractions\PH.UowEntityFramework.EntityFramework.Abstractions.csproj" />
+    <ProjectReference Include="..\PH.UowEntityFramework.EntityFramework\PH.UowEntityFramework.EntityFramework.csproj" />
     <ProjectReference Include="..\PH.UowEntityFramework.UnitOfWork\PH.UowEntityFramework.UnitOfWork.csproj" />
     
   </ItemGroup>

@@ -1,20 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
+using System.Dynamic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Text.Json;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using MassTransit;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Proxies.Internal;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using PH.UowEntityFramework.EntityFramework.Abstractions.Models;
 using PH.UowEntityFramework.EntityFramework.Audit;
 using PH.UowEntityFramework.EntityFramework.Extensions;
@@ -24,18 +24,12 @@ using PH.UowEntityFramework.UnitOfWork;
 namespace PH.UowEntityFramework.EntityFramework.Infrastructure
 {
     /// <summary>
-    /// Identitity Context Infrastructure
+    /// Context Infrastructure
     /// </summary>
-    /// <typeparam name="TUser">The type of the user.</typeparam>
-    /// <typeparam name="TRole">The type of the role.</typeparam>
-    /// <typeparam name="TKey">The type of the key.</typeparam>
-    /// <seealso cref="Microsoft.AspNetCore.Identity.EntityFrameworkCore.IdentityDbContext{TUser, TRole, TKey}" />
-    public abstract class IdentityBaseContextInfrastructure<TUser, TRole, TKey> :
-        Microsoft.AspNetCore.Identity.EntityFrameworkCore.IdentityDbContext<TUser, TRole, TKey>
-        , IIdentityBaseContext<TUser, TRole, TKey>, IAuditContext
-        where TUser : IdentityUser<TKey>, IEntity<TKey>
-        where TRole : IdentityRole<TKey>, IEntity<TKey>
-        where TKey : IEquatable<TKey>
+    /// <seealso cref="Microsoft.EntityFrameworkCore.DbContext" />
+    /// <seealso cref="PH.UowEntityFramework.EntityFramework.Infrastructure.IBaseContext" />
+    /// <seealso cref="PH.UowEntityFramework.EntityFramework.Infrastructure.IAuditContext" />
+    public abstract class BaseContextInfrastructure : DbContext , IBaseContext , IAuditContext
     {
         /// <summary>Gets or sets the author.</summary>
         /// <value>The author.</value>
@@ -101,22 +95,55 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
         /// <value>The cancellation token.</value>
         public CancellationToken CancellationToken { get; protected set; }
 
-        /// <summary>Gets the entity json serializer options.</summary>
-        /// <value>The entity json serializer options.</value>
-        public JsonSerializerOptions EntityJsonSerializerOptions { get; }
+
 
         /// <summary>
-        /// FOR MIGRATION Initializes a new instance of the <see cref="IdentityBaseContextInfrastructure{TUser, TRole, TKey}"/> class.
+        /// FOR MIGRATION Initializes a new instance of the <see cref="BaseContextInfrastructure"/> class.
         /// </summary>
         /// <param name="migrationTime">The migration time.</param>
         /// <param name="options">The options.</param>
-        protected IdentityBaseContextInfrastructure(DateTime migrationTime, DbContextOptions options)
+        protected BaseContextInfrastructure(DateTime migrationTime, DbContextOptions options)
             : this(options, string.Empty, string.Empty, false, false)
         {
         }
+        
+        /// <summary>
+        /// Initializes a new instance of the <see cref="BaseContextInfrastructure"/> class.
+        /// </summary>
+        /// <param name="options">The options.</param>
+        /// <param name="identifier">The identifier.</param>
+        /// <param name="author">The author.</param>
+        /// <param name="auditingEnabled">if audits enabled</param>
+        /// <exception cref="ArgumentNullException">options</exception>
+        protected BaseContextInfrastructure([NotNull] DbContextOptions options, [CanBeNull] string identifier,
+                                            string author, bool auditingEnabled)
+            : this(options, identifier, author, auditingEnabled, true)
+        {
+        }
 
-        private IdentityBaseContextInfrastructure([NotNull] DbContextOptions options, [CanBeNull] string identifier,
-                                                  string author, bool auditingEnabled, bool initTransaction = true)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="BaseContextInfrastructure"/> class.
+        /// </summary>
+        /// <param name="options">The options to be used by a <see cref="T:Microsoft.EntityFrameworkCore.DbContext" />.</param>
+        /// <param name="auditingEnabled">if auditing enabled</param>
+        protected BaseContextInfrastructure([NotNull] DbContextOptions options, bool auditingEnabled = false)
+            : this(options, string.Empty, string.Empty, auditingEnabled, true)
+        {
+        }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether auditing enabled.
+        /// </summary>
+        /// <value><c>true</c> if auditing enabled; otherwise, <c>false</c>.</value>
+        public bool AuditingEnabled { get; set; }
+
+        /// <summary>Gets or sets the changecount.</summary>
+        /// <value>The changecount.</value>
+        public int Changecount { get; protected set; }
+
+
+        private BaseContextInfrastructure([NotNull] DbContextOptions options, [CanBeNull] string identifier,
+                                          string author, bool auditingEnabled, bool initTransaction = true)
             : base(options)
         {
             if (options is null)
@@ -137,11 +164,9 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
             Identifier = string.IsNullOrEmpty(identifier) ? $"{CtxUid:N}" : identifier;
             Author     = author;
 
-            EntityJsonSerializerOptions = new JsonSerializerOptions()
-            {
-                WriteIndented = false,
-                Converters    = {new EntityToJsonConverterFactory(), new DateTimeConverter()}
-            };
+            
+
+            EntityTypesDictionary = new Dictionary<Type, (IEntityType entityType, string TableName)>();
 
             var auditTran = EnsureTransactionAuditAsync().GetAwaiter().GetResult();
             if (initTransaction)
@@ -233,22 +258,54 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
                 {
                         
                     var t = FindEntityType(e);
+                    string strObjectId = "";
+
 
                     
                     //var json = System.Text.Json.JsonSerializer.Serialize(entity, EntityJsonSerializerOptions);
-                    var vl = JsonSerializer.SerializeToUtf8Bytes(entry.Entity, EntityJsonSerializerOptions);
+                    var jSettings = new JsonSerializerSettings()
+                    {
+                        ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+                        Formatting            = Formatting.None,
+                        
+                    };
+                    //jSettings.Converters.Add(new EntityConverter());
+
+                    var eo = new ExpandoObject();
+                    var d = (IDictionary<string, object>) eo;
+                    var props = entry.CurrentValues.Properties.OrderBy(x => x.Name).ToList();
+                    foreach (var property in props)
+                    {
+                        var name = property.Name;
+
+                        var getter = property.PropertyInfo.GetMethod;
+                        var valueRaw = getter?.Invoke(e, null);
+                        d.Add(name, valueRaw);
+
+                        if (name == "Id")
+                        {
+                            strObjectId = $"{valueRaw}";
+                        }
+
+                        
+                        
+                    }
+
+                    var vl = Newtonsoft.Json.JsonConvert.SerializeObject(d, jSettings);
+
                     var a = new Audit.Audit()
                     {
                         Author        = Author,
                         Action        = $"{method}",
                         DateTime      = DateTime.UtcNow,
-                        EntityName    = t.entityType.ClrType.Name,
+                        EntityName    = t.entityType.Name,
                         TableName     = t.TableName,
                         Id            = $"{NewId.NextGuid():N}",
-                        KeyValue      = $"{GetIdValue(entry.Entity)}",
+                        KeyValue      = strObjectId ,
                         TransactionId = auditTran.Id,
-                        Values        = vl
+                        Values        = Encoding.UTF8.GetBytes(vl)
                     };
+
                     await Audits.AddAsync(a);
                 }
 
@@ -260,39 +317,51 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
             }
         }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="IdentityBaseContextInfrastructure{TUser, TRole, TKey}"/> class.
-        /// </summary>
-        /// <param name="options">The options.</param>
-        /// <param name="identifier">The identifier.</param>
-        /// <param name="author">The author.</param>
-        /// <param name="auditingEnabled">if audits enabled</param>
-        /// <exception cref="ArgumentNullException">options</exception>
-        protected IdentityBaseContextInfrastructure([NotNull] DbContextOptions options, [CanBeNull] string identifier,
-                                                    string author, bool auditingEnabled)
-            : this(options, identifier, author, auditingEnabled, true)
+
+        
+        public async Task<AuditInfo[]> GetAuditInfoAsync<TEntity, TEntityKey>([NotNull] TEntity entity)
+            where TEntity : class, IEntity<TEntityKey> where TEntityKey : IEquatable<TEntityKey>
         {
+            if (!AuditingEnabled)
+            {
+                return null;
+            }
+            var infoType = FindEntityType(entity);
+            var tp       = infoType.entityType.Name;
+
+            var audits = await Audits.Where(x => x.TableName == infoType.TableName
+                                                 && x.EntityName == tp
+                                                 && x.KeyValue == $"{entity.Id}"
+                                           ).OrderByDescending(x => x.DateTime).ToArrayAsync();
+
+
+            return audits.ToAuditInfoArray();
         }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="IdentityBaseContextInfrastructure{TUser, TRole, TKey}"/> class.
-        /// </summary>
-        /// <param name="options">The options to be used by a <see cref="T:Microsoft.EntityFrameworkCore.DbContext" />.</param>
-        /// <param name="auditingEnabled">if auditing enabled</param>
-        protected IdentityBaseContextInfrastructure([NotNull] DbContextOptions options, bool auditingEnabled = false)
-            : this(options, string.Empty, string.Empty, auditingEnabled, true)
+        /// <summary>Finds the audit information for a entity.</summary>
+        /// <typeparam name="TEntity">The type of the entity.</typeparam>
+        /// <typeparam name="TEntityKey">The type of the entity key.</typeparam>
+        /// <param name="id">The entity identifier.</param>
+        /// <returns></returns>
+        [ItemCanBeNull]
+        public async Task<AuditInfo[]> FindAuditInfoAsync<TEntity, TEntityKey>(TEntityKey id) 
+            where TEntity : class, IEntity<TEntityKey> where TEntityKey : IEquatable<TEntityKey>
         {
+
+            if (!AuditingEnabled)
+            {
+                return null;
+            }
+
+            var entry = await this.Set<TEntity>().FirstOrDefaultAsync(x => x.Id.Equals(id));
+            if (null == entry)
+            {
+                return null;
+            }
+
+            return await GetAuditInfoAsync<TEntity,TEntityKey>(entry);
+
         }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether auditing enabled.
-        /// </summary>
-        /// <value><c>true</c> if auditing enabled; otherwise, <c>false</c>.</value>
-        public bool AuditingEnabled { get; set; }
-
-        /// <summary>Gets or sets the changecount.</summary>
-        /// <value>The changecount.</value>
-        public int Changecount { get; protected set; }
 
 
         #region Db Contenxt and Config
@@ -421,12 +490,7 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
 
         #region TransactionAudit and Values modifiers
 
-        /// <summary>Ensures the transaction audit.</summary>
-        /// <returns></returns>
-        protected virtual TransactionAudit EnsureTransactionAudit()
-        {
-            return EnsureTransactionAuditAsync().GetAwaiter().GetResult();
-        }
+        
 
         /// <summary>Ensures the transaction audit asynchronous.</summary>
         /// <returns></returns>
@@ -450,262 +514,40 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
 
         
 
+        protected internal Dictionary<Type,(IEntityType entityType, string TableName)> EntityTypesDictionary { get; }
 
-
-        private (IEntityType entityType, string TableName) FindEntityType(IEntity incoming)
+        protected internal (IEntityType entityType, string TableName) FindEntityType(IEntity incoming)
         {
-            Type t = null;
-            if (incoming is IProxyLazyLoader proxy)
+            
+            Type t = incoming.GetType();
+            if (incoming is IProxyLazyLoader)
             {
                 t = incoming.GetType().BaseType;
             }
-            else
+            
+
+            if (!EntityTypesDictionary.ContainsKey(t))
             {
-                t = incoming.GetType();
+                var entityType = this.Model.FindEntityType(t);
+                var tableName = entityType?.GetTableName() ?? "";
+                EntityTypesDictionary.Add(t, (entityType, tableName));
+                
             }
 
-            var entityType = this.Model.FindEntityType(t);
-            //var schema     = entityType?.GetSchema() ?? "";
-            var tableName = entityType?.GetTableName() ?? "";
 
-            return (entityType, tableName);
+            return EntityTypesDictionary[t];
+
+            
         }
 
 
-
-        [CanBeNull]
-        private static object GetIdValue([CanBeNull] object src)
-        {
-            return src?.GetType()?.GetProperty("Id")?.GetValue(src, null);
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        protected enum EventMethod
-        {
-            /// <summary>The add operation</summary>
-            Add,
-
-            /// <summary>The update operation</summary>
-            Update,
-
-            /// <summary>The delete operation</summary>
-            Delete
-        }
-
+        
         
         
         #endregion
 
 
-        /// <summary>
-        ///     <para>
-        ///         Begins tracking the given entity, and any other reachable entities that are
-        ///         not already being tracked, in the <see cref="F:Microsoft.EntityFrameworkCore.EntityState.Added" /> state such that
-        ///         they will be inserted into the database when <see cref="M:Microsoft.EntityFrameworkCore.DbContext.SaveChanges" /> is called.
-        ///     </para>
-        ///     <para>
-        ///         Use <see cref="P:Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry.State" /> to set the state of only a single entity.
-        ///     </para>
-        /// </summary>
-        /// <typeparam name="TEntity"> The type of the entity. </typeparam>
-        /// <param name="entity"> The entity to add. </param>
-        /// <returns>
-        ///     The <see cref="T:Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry`1" /> for the entity. The entry provides
-        ///     access to change tracking information and operations for the entity.
-        /// </returns>
-        public sealed override EntityEntry<TEntity> Add<TEntity>(TEntity entity)
-        {
-            if (!(entity is Audit.Audit) && !(entity is TransactionAudit))
-            {
-                var auditTran = EnsureTransactionAuditAsync().GetAwaiter().GetResult();
-            }
-            
-            return base.Add(entity);
-        }
 
-        /// <summary>
-        ///     <para>
-        ///         Begins tracking the given entity, and any other reachable entities that are
-        ///         not already being tracked, in the <see cref="F:Microsoft.EntityFrameworkCore.EntityState.Added" /> state such that they will
-        ///         be inserted into the database when <see cref="M:Microsoft.EntityFrameworkCore.DbContext.SaveChanges" /> is called.
-        ///     </para>
-        ///     <para>
-        ///         Use <see cref="P:Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry.State" /> to set the state of only a single entity.
-        ///     </para>
-        /// </summary>
-        /// <param name="entity"> The entity to add. </param>
-        /// <returns>
-        ///     The <see cref="T:Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry" /> for the entity. The entry provides
-        ///     access to change tracking information and operations for the entity.
-        /// </returns>
-        public override EntityEntry Add(object entity)
-        {
-            if (!(entity is Audit.Audit) && !(entity is TransactionAudit))
-            {
-                var auditTran = EnsureTransactionAuditAsync().GetAwaiter().GetResult();
-            }
-
-            return base.Add(entity);
-        }
-
-
-        /// <summary>
-        ///     <para>
-        ///         Begins tracking the given entity, and any other reachable entities that are
-        ///         not already being tracked, in the <see cref="F:Microsoft.EntityFrameworkCore.EntityState.Added" /> state such that they will
-        ///         be inserted into the database when <see cref="M:Microsoft.EntityFrameworkCore.DbContext.SaveChanges" /> is called.
-        ///     </para>
-        ///     <para>
-        ///         This method is async only to allow special value generators, such as the one used by
-        ///         'Microsoft.EntityFrameworkCore.Metadata.SqlServerValueGenerationStrategy.SequenceHiLo',
-        ///         to access the database asynchronously. For all other cases the non async method should be used.
-        ///     </para>
-        /// </summary>
-        /// <typeparam name="TEntity"> The type of the entity. </typeparam>
-        /// <param name="entity"> The entity to add. </param>
-        /// <param name="cancellationToken">A <see cref="T:System.Threading.CancellationToken" /> to observe while waiting for the task to complete.</param>
-        /// <returns>
-        ///     A task that represents the asynchronous Add operation. The task result contains the
-        ///     <see cref="T:Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry`1" /> for the entity. The entry provides access to change tracking
-        ///     information and operations for the entity.
-        /// </returns>
-        public sealed override async ValueTask<EntityEntry<TEntity>> AddAsync<TEntity>(
-            TEntity entity, CancellationToken cancellationToken = new CancellationToken())
-        {
-            if (!(entity is Audit.Audit) && !(entity is TransactionAudit))
-            {
-                var auditTran = await EnsureTransactionAuditAsync();
-            }
-            
-            return await base.AddAsync(entity, cancellationToken);
-        }
-
-        /// <summary>
-        ///     <para>
-        ///         Begins tracking the given entity, and any other reachable entities that are
-        ///         not already being tracked, in the <see cref="F:Microsoft.EntityFrameworkCore.EntityState.Added" /> state such that they will
-        ///         be inserted into the database when <see cref="M:Microsoft.EntityFrameworkCore.DbContext.SaveChanges" /> is called.
-        ///     </para>
-        ///     <para>
-        ///         Use <see cref="P:Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry.State" /> to set the state of only a single entity.
-        ///     </para>
-        ///     <para>
-        ///         This method is async only to allow special value generators, such as the one used by
-        ///         'Microsoft.EntityFrameworkCore.Metadata.SqlServerValueGenerationStrategy.SequenceHiLo',
-        ///         to access the database asynchronously. For all other cases the non async method should be used.
-        ///     </para>
-        /// </summary>
-        /// <param name="entity"> The entity to add. </param>
-        /// <param name="cancellationToken">A <see cref="T:System.Threading.CancellationToken" /> to observe while waiting for the task to complete.</param>
-        /// <returns>
-        ///     A task that represents the asynchronous Add operation. The task result contains the
-        ///     <see cref="T:Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry" /> for the entity. The entry provides access to change tracking
-        ///     information and operations for the entity.
-        /// </returns>
-        public sealed override async ValueTask<EntityEntry> AddAsync(object entity,
-                                                                     CancellationToken cancellationToken =
-                                                                         new CancellationToken())
-        {
-            if (!(entity is Audit.Audit) && !(entity is TransactionAudit))
-            {
-                var auditTran = await EnsureTransactionAuditAsync();
-            }
-            
-            return await base.AddAsync(entity, cancellationToken);
-        }
-
-
-        /// <summary>
-        ///     <para>
-        ///         Begins tracking the given entity and entries reachable from the given entity using
-        ///         the <see cref="F:Microsoft.EntityFrameworkCore.EntityState.Modified" /> state by default, but see below for cases
-        ///         when a different state will be used.
-        ///     </para>
-        ///     <para>
-        ///         Generally, no database interaction will be performed until <see cref="M:Microsoft.EntityFrameworkCore.DbContext.SaveChanges" /> is called.
-        ///     </para>
-        ///     <para>
-        ///         A recursive search of the navigation properties will be performed to find reachable entities
-        ///         that are not already being tracked by the context. All entities found will be tracked
-        ///         by the context.
-        ///     </para>
-        ///     <para>
-        ///         For entity types with generated keys if an entity has its primary key value set
-        ///         then it will be tracked in the <see cref="F:Microsoft.EntityFrameworkCore.EntityState.Modified" /> state. If the primary key
-        ///         value is not set then it will be tracked in the <see cref="F:Microsoft.EntityFrameworkCore.EntityState.Added" /> state.
-        ///         This helps ensure new entities will be inserted, while existing entities will be updated.
-        ///         An entity is considered to have its primary key value set if the primary key property is set
-        ///         to anything other than the CLR default for the property type.
-        ///     </para>
-        ///     <para>
-        ///         For entity types without generated keys, the state set is always <see cref="F:Microsoft.EntityFrameworkCore.EntityState.Modified" />.
-        ///     </para>
-        ///     <para>
-        ///         Use <see cref="P:Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry.State" /> to set the state of only a single entity.
-        ///     </para>
-        /// </summary>
-        /// <typeparam name="TEntity"> The type of the entity. </typeparam>
-        /// <param name="entity"> The entity to update. </param>
-        /// <returns>
-        ///     The <see cref="T:Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry`1" /> for the entity. The entry provides
-        ///     access to change tracking information and operations for the entity.
-        /// </returns>
-        public sealed override EntityEntry<TEntity> Update<TEntity>(TEntity entity)
-        {
-            if (!(entity is Audit.Audit) && !(entity is TransactionAudit))
-            {
-                var auditTran = EnsureTransactionAuditAsync().GetAwaiter().GetResult();
-            }
-
-            return base.Update(entity);
-        }
-
-
-        /// <summary>
-        ///     <para>
-        ///         Begins tracking the given entity and entries reachable from the given entity using
-        ///         the <see cref="F:Microsoft.EntityFrameworkCore.EntityState.Modified" /> state by default, but see below for cases
-        ///         when a different state will be used.
-        ///     </para>
-        ///     <para>
-        ///         Generally, no database interaction will be performed until <see cref="M:Microsoft.EntityFrameworkCore.DbContext.SaveChanges" /> is called.
-        ///     </para>
-        ///     <para>
-        ///         A recursive search of the navigation properties will be performed to find reachable entities
-        ///         that are not already being tracked by the context. All entities found will be tracked
-        ///         by the context.
-        ///     </para>
-        ///     <para>
-        ///         For entity types with generated keys if an entity has its primary key value set
-        ///         then it will be tracked in the <see cref="F:Microsoft.EntityFrameworkCore.EntityState.Modified" /> state. If the primary key
-        ///         value is not set then it will be tracked in the <see cref="F:Microsoft.EntityFrameworkCore.EntityState.Added" /> state.
-        ///         This helps ensure new entities will be inserted, while existing entities will be updated.
-        ///         An entity is considered to have its primary key value set if the primary key property is set
-        ///         to anything other than the CLR default for the property type.
-        ///     </para>
-        ///     <para>
-        ///         For entity types without generated keys, the state set is always <see cref="F:Microsoft.EntityFrameworkCore.EntityState.Modified" />.
-        ///     </para>
-        ///     <para>
-        ///         Use <see cref="P:Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry.State" /> to set the state of only a single entity.
-        ///     </para>
-        /// </summary>
-        /// <param name="entity"> The entity to update. </param>
-        /// <returns>
-        ///     The <see cref="T:Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry" /> for the entity. The entry provides
-        ///     access to change tracking information and operations for the entity.
-        /// </returns>
-        public sealed override EntityEntry Update(object entity)
-        {
-            if (!(entity is Audit.Audit) && !(entity is TransactionAudit))
-            {
-                var auditTran = EnsureTransactionAuditAsync().GetAwaiter().GetResult();
-            }
-
-            return base.Update(entity);
-        }
 
 
         /// <summary>
@@ -796,153 +638,8 @@ namespace PH.UowEntityFramework.EntityFramework.Infrastructure
             }
         }
 
-        /// <summary>
-        ///     Begins tracking the given entities, and any other reachable entities that are
-        ///     not already being tracked, in the <see cref="F:Microsoft.EntityFrameworkCore.EntityState.Added" /> state such that they will
-        ///     be inserted into the database when <see cref="M:Microsoft.EntityFrameworkCore.DbContext.SaveChanges" /> is called.
-        /// </summary>
-        /// <param name="entities"> The entities to add. </param>
-        public sealed override void AddRange(params object[] entities)
-        {
-
-            var auditTran = EnsureTransactionAuditAsync().GetAwaiter().GetResult();
-            base.AddRange(entities);
-        }
-
-        /// <summary>
-        ///     <para>
-        ///         Begins tracking the given entity, and any other reachable entities that are
-        ///         not already being tracked, in the <see cref="F:Microsoft.EntityFrameworkCore.EntityState.Added" /> state such that they will
-        ///         be inserted into the database when <see cref="M:Microsoft.EntityFrameworkCore.DbContext.SaveChanges" /> is called.
-        ///     </para>
-        ///     <para>
-        ///         This method is async only to allow special value generators, such as the one used by
-        ///         'Microsoft.EntityFrameworkCore.Metadata.SqlServerValueGenerationStrategy.SequenceHiLo',
-        ///         to access the database asynchronously. For all other cases the non async method should be used.
-        ///     </para>
-        /// </summary>
-        /// <param name="entities"> The entities to add. </param>
-        /// <returns> A task that represents the asynchronous operation. </returns>
-        public sealed override async Task AddRangeAsync(params object[] entities)
-        {
-            
-                var auditTran = await EnsureTransactionAuditAsync();
-           
-
-            await base.AddRangeAsync(entities);
-        }
-
-        /// <summary>
-        ///     Begins tracking the given entities, and any other reachable entities that are
-        ///     not already being tracked, in the <see cref="F:Microsoft.EntityFrameworkCore.EntityState.Added" /> state such that they will
-        ///     be inserted into the database when <see cref="M:Microsoft.EntityFrameworkCore.DbContext.SaveChanges" /> is called.
-        /// </summary>
-        /// <param name="entities"> The entities to add. </param>
-        public sealed override void AddRange(IEnumerable<object> entities)
-        {
-            var auditTran = EnsureTransactionAuditAsync().GetAwaiter().GetResult();
-           
-
-            base.AddRange(entities);
-        }
-
-        /// <summary>
-        ///     <para>
-        ///         Begins tracking the given entity, and any other reachable entities that are
-        ///         not already being tracked, in the <see cref="F:Microsoft.EntityFrameworkCore.EntityState.Added" /> state such that they will
-        ///         be inserted into the database when <see cref="M:Microsoft.EntityFrameworkCore.DbContext.SaveChanges" /> is called.
-        ///     </para>
-        ///     <para>
-        ///         This method is async only to allow special value generators, such as the one used by
-        ///         'Microsoft.EntityFrameworkCore.Metadata.SqlServerValueGenerationStrategy.SequenceHiLo',
-        ///         to access the database asynchronously. For all other cases the non async method should be used.
-        ///     </para>
-        /// </summary>
-        /// <param name="entities"> The entities to add. </param>
-        /// <param name="cancellationToken">A <see cref="T:System.Threading.CancellationToken" /> to observe while waiting for the task to complete.</param>
-        /// <returns>
-        ///     A task that represents the asynchronous operation.
-        /// </returns>
-        public sealed override async Task AddRangeAsync(IEnumerable<object> entities,
-                                                        CancellationToken cancellationToken = new CancellationToken())
-        {
-            var e = await EnsureTransactionAuditAsync();
-            await base.AddRangeAsync(entities, cancellationToken);
-        }
 
 
-        /// <summary>
-        ///     <para>
-        ///         Begins tracking the given entities and entries reachable from the given entities using
-        ///         the <see cref="F:Microsoft.EntityFrameworkCore.EntityState.Modified" /> state by default, but see below for cases
-        ///         when a different state will be used.
-        ///     </para>
-        ///     <para>
-        ///         Generally, no database interaction will be performed until <see cref="M:Microsoft.EntityFrameworkCore.DbContext.SaveChanges" /> is called.
-        ///     </para>
-        ///     <para>
-        ///         A recursive search of the navigation properties will be performed to find reachable entities
-        ///         that are not already being tracked by the context. All entities found will be tracked
-        ///         by the context.
-        ///     </para>
-        ///     <para>
-        ///         For entity types with generated keys if an entity has its primary key value set
-        ///         then it will be tracked in the <see cref="F:Microsoft.EntityFrameworkCore.EntityState.Modified" /> state. If the primary key
-        ///         value is not set then it will be tracked in the <see cref="F:Microsoft.EntityFrameworkCore.EntityState.Added" /> state.
-        ///         This helps ensure new entities will be inserted, while existing entities will be updated.
-        ///         An entity is considered to have its primary key value set if the primary key property is set
-        ///         to anything other than the CLR default for the property type.
-        ///     </para>
-        ///     <para>
-        ///         For entity types without generated keys, the state set is always <see cref="F:Microsoft.EntityFrameworkCore.EntityState.Modified" />.
-        ///     </para>
-        ///     <para>
-        ///         Use <see cref="P:Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry.State" /> to set the state of only a single entity.
-        ///     </para>
-        /// </summary>
-        /// <param name="entities"> The entities to update. </param>
-        public sealed override void UpdateRange(params object[] entities)
-        {
-            var e = EnsureTransactionAuditAsync().GetAwaiter().GetResult();
-            base.UpdateRange(entities);
-        }
-
-        /// <summary>
-        ///     <para>
-        ///         Begins tracking the given entities and entries reachable from the given entities using
-        ///         the <see cref="F:Microsoft.EntityFrameworkCore.EntityState.Modified" /> state by default, but see below for cases
-        ///         when a different state will be used.
-        ///     </para>
-        ///     <para>
-        ///         Generally, no database interaction will be performed until <see cref="M:Microsoft.EntityFrameworkCore.DbContext.SaveChanges" /> is called.
-        ///     </para>
-        ///     <para>
-        ///         A recursive search of the navigation properties will be performed to find reachable entities
-        ///         that are not already being tracked by the context. All entities found will be tracked
-        ///         by the context.
-        ///     </para>
-        ///     <para>
-        ///         For entity types with generated keys if an entity has its primary key value set
-        ///         then it will be tracked in the <see cref="F:Microsoft.EntityFrameworkCore.EntityState.Modified" /> state. If the primary key
-        ///         value is not set then it will be tracked in the <see cref="F:Microsoft.EntityFrameworkCore.EntityState.Added" /> state.
-        ///         This helps ensure new entities will be inserted, while existing entities will be updated.
-        ///         An entity is considered to have its primary key value set if the primary key property is set
-        ///         to anything other than the CLR default for the property type.
-        ///     </para>
-        ///     <para>
-        ///         For entity types without generated keys, the state set is always <see cref="F:Microsoft.EntityFrameworkCore.EntityState.Modified" />.
-        ///     </para>
-        ///     <para>
-        ///         Use <see cref="P:Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry.State" /> to set the state of only a single entity.
-        ///     </para>
-        /// </summary>
-        /// <param name="entities"> The entities to update. </param>
-        public sealed override void UpdateRange(IEnumerable<object> entities)
-        {
-            var e = EnsureTransactionAuditAsync().GetAwaiter().GetResult();
-            base.UpdateRange(entities);
-            
-        }
 
 
         /// <summary>

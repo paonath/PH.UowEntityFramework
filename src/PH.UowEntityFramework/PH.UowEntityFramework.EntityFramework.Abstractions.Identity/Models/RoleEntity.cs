@@ -1,14 +1,15 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using PH.UowEntityFramework.EntityFramework.Abstractions.Models;
 
-namespace PH.UowEntityFramework.EntityFramework.Abstractions.Models
+namespace PH.UowEntityFramework.EntityFramework.Abstractions.Identity.Models
 {
     /// <summary>
-    /// User entity
+    /// Role
     /// </summary>
-    /// <seealso cref="Microsoft.AspNetCore.Identity.IdentityUser{String}" />
+    /// <seealso cref="Microsoft.AspNetCore.Identity.IdentityRole{String}" />
     /// <seealso cref="IEntity{TKey}" />
-    public abstract class UserEntity : Microsoft.AspNetCore.Identity.IdentityUser<string> , IEntity<string>
+    public abstract class RoleEntity : Microsoft.AspNetCore.Identity.IdentityRole<string>, IEntity<string>
     {
         /// <summary>
         /// True if Entity is Deleted
@@ -34,7 +35,6 @@ namespace PH.UowEntityFramework.EntityFramework.Abstractions.Models
         ///  Uid If <see cref="IEntity.Deleted"/> 
         /// </summary>
         public long? DeletedTransactionId { get; set; }
-
 
         /// <summary>
         /// Reference to Delete <see cref="TransactionAudit"/> 
